@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialBook - Közösségi Oldal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: { 50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81' },
+                        dark: { 100: '#1e1e1e', 200: '#2d2d2d', 300: '#3d3d3d', 400: '#4d4d4d' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .dark .glass { background: rgba(30, 30, 30, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hover-scale { transition: transform 0.2s ease; }
+        .hover-scale:hover { transform: scale(1.02); }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .message-bubble { max-width: 70%; word-wrap: break-word; }
+        .typing-dot { animation: typingBounce 1.4s ease-in-out infinite; }
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-10px); } }
+        .story-ring { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); padding: 3px; }
+        .notification-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.1); } }
+        .slide-in { animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        input:focus, textarea:focus { outline: none; }
+        .btn-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); transition: all 0.3s ease; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4); }
+        .card { transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); }
+        .dark .card:hover { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-dark-100 min-h-screen transition-colors duration-300">
+
+<!-- Auth Page -->
+<div id="authPage" class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <div class="absolute inset-0 gradient-bg"></div>
+    <div class="absolute inset-0 opacity-30">
+        <div class="absolute top-20 left-20 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-float"></div>
+        <div class="absolute top-40 right-20 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl animate-float" style="animation-delay: 1s;"></div>
+        <div class="absolute bottom-20 left-1/2 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-float" style="animation-delay: 2s;"></div>
+    </div>
+    
+    <div class="glass rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col lg:flex-row relative z-10 fade-in">
+        <div class="lg:w-1/2 p-10 flex flex-col justify-center text-white bg-gradient-to-br from-indigo-600/90 to-purple-700/90">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur">
+                    <i class="fas fa-rocket text-3xl"></i>
+                </div>
+                <h1 class="text-4xl font-bold">SocialBook</h1>
+            </div>
+            <p class="text-xl text-white/80 mb-8">Csatlakozz a közösséghez, oszd meg pillanataidat és építs kapcsolatokat!</p>
+            <div class="space-y-4">
+                <div class="flex items-center gap-4 bg-white/10 rounded-xl p-4 backdrop-blur">
+                    <i class="fas fa-users text-2xl text-purple-200"></i>
+                    <div>
+                        <p class="font-semibold">Barátok</p>
+                        <p class="text-sm text-white/70">Kapcsolódj régi és új ismerősökkel</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 bg-white/10 rounded-xl p-4 backdrop-blur">
+                    <i class="fas fa-comment-dots text-2xl text-blue-200"></i>
+                    <div>
+                        <p class="font-semibold">Messenger</p>
+                        <p class="text-sm text-white/70">Valós idejű üzenetküldés</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 bg-white/10 rounded-xl p-4 backdrop-blur">
+                    <i class="fas fa-camera text-2xl text-pink-200"></i>
+                    <div>
+                        <p class="font-semibold">Történetek</p>
+                        <p class="text-sm text-white/70">Oszd meg a pillanataidat</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="lg:w-1/2 p-10 bg-white dark:bg-dark-200">
+            <div id="loginForm">
+                <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Üdv újra! 👋</h2>
+                <p class="text-gray-500 dark:text-gray-400 mb-8">Jelentkezz be a fiókodba</p>
+                
+                <div class="space-y-5">
+                    <div class="relative">
+                        <i class="fas fa-envelope absolute left-4 top-4 text-gray-400"></i>
+                        <input type="email" id="loginEmail" placeholder="Email cím" 
+                            class="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 transition">
+                    </div>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-4 top-4 text-gray-400"></i>
+                        <input type="password" id="loginPassword" placeholder="Jelszó" 
+                            class="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 transition">
+                    </div>
+                    <button onclick="login()" class="w-full btn-primary text-white py-4 rounded-xl font-semibold text-lg">
+                        Bejelentkezés <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+                
+                <div class="mt-8 text-center">
+                    <span class="text-gray-500 dark:text-gray-400">Nincs még fiókod?</span>
+                    <button onclick="showRegister()" class="text-primary-600 font-semibold ml-2 hover:underline">Regisztráció</button>
+                </div>
+            </div>
+            
+            <div id="registerForm" class="hidden">
+                <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Csatlakozz! 🚀</h2>
+                <p class="text-gray-500 dark:text-gray-400 mb-8">Hozd létre a fiókodat</p>
+                
+                <div class="space-y-5">
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-4 top-4 text-gray-400"></i>
+                        <input type="text" id="regName" placeholder="Teljes név" 
+                            class="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 transition">
+                    </div>
+                    <div class="relative">
+                        <i class="fas fa-envelope absolute left-4 top-4 text-gray-400"></i>
+                        <input type="email" id="regEmail" placeholder="Email cím" 
+                            class="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 transition">
+                    </div>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-4 top-4 text-gray-400"></i>
+                        <input type="password" id="regPassword" placeholder="Jelszó" 
+                            class="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 transition">
+                    </div>
+                    <button onclick="register()" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg hover:shadow-lg hover:shadow-green-500/30 transition-all hover:-translate-y-0.5">
+                        Fiók létrehozása <i class="fas fa-check ml-2"></i>
+                    </button>
+                </div>
+                
+                <div class="mt-8 text-center">
+                    <span class="text-gray-500 dark:text-gray-400">Van már fiókod?</span>
+                    <button onclick="showLogin()" class="text-primary-600 font-semibold ml-2 hover:underline">Bejelentkezés</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main App -->
+<div id="mainApp" class="hidden">
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-gray-200 dark:border-dark-300">
+        <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 cursor-pointer" onclick="showSection('feed')">
+                    <div class="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center">
+                        <i class="fas fa-rocket text-white"></i>
+                    </div>
+                    <span class="text-xl font-bold gradient-text hidden sm:block">SocialBook</span>
+                </div>
+                <div class="relative hidden md:block">
+                    <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+                    <input type="text" id="searchInput" placeholder="Keresés..." 
+                        class="bg-gray-100 dark:bg-dark-300 rounded-full pl-12 pr-4 py-3 w-72 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 transition">
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-1">
+                <button onclick="showSection('feed')" class="nav-btn p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-300 transition group" title="Főoldal">
+                    <i class="fas fa-home text-xl text-gray-500 dark:text-gray-400 group-hover:text-primary-500"></i>
+                </button>
+                <button onclick="showSection('friends')" class="nav-btn p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-300 transition group" title="Barátok">
+                    <i class="fas fa-user-friends text-xl text-gray-500 dark:text-gray-400 group-hover:text-primary-500"></i>
+                </button>
+                <button onclick="showSection('messenger')" class="nav-btn p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-300 transition group relative" title="Üzenetek">
+                    <i class="fas fa-comment-dots text-xl text-gray-500 dark:text-gray-400 group-hover:text-primary-500"></i>
+                    <span id="msgBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center notification-pulse font-semibold">0</span>
+                </button>
+                <button onclick="showSection('notifications')" class="nav-btn p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-300 transition group relative" title="Értesítések">
+                    <i class="fas fa-bell text-xl text-gray-500 dark:text-gray-400 group-hover:text-primary-500"></i>
+                    <span id="notifBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center notification-pulse font-semibold">0</span>
+                </button>
+                <button onclick="toggleDarkMode()" class="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-300 transition" title="Téma váltása">
+                    <i id="themeIcon" class="fas fa-moon text-xl text-gray-500 dark:text-gray-400"></i>
+                </button>
+                <div class="relative ml-2">
+                    <button onclick="toggleProfileMenu()" class="flex items-center gap-2 p-1 rounded-full hover:ring-4 hover:ring-primary-100 dark:hover:ring-dark-300 transition">
+                        <img id="navAvatar" src="" class="w-10 h-10 rounded-full object-cover ring-2 ring-primary-500">
+                    </button>
+                    <div id="profileMenu" class="hidden absolute right-0 top-14 glass rounded-2xl shadow-2xl w-80 py-3 slide-in">
+                        <div onclick="showSection('profile')" class="flex items-center gap-3 p-4 mx-2 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
+                            <img id="menuAvatar" src="" class="w-12 h-12 rounded-full ring-2 ring-primary-500">
+                            <div>
+                                <span id="menuName" class="font-semibold text-gray-800 dark:text-white block"></span>
+                                <span class="text-sm text-gray-500">Profil megtekintése</span>
+                            </div>
+                        </div>
+                        <hr class="my-2 border-gray-200 dark:border-dark-300">
+                        <div id="adminPanel" class="hidden">
+                            <button onclick="showSection('admin')" class="w-full flex items-center gap-3 px-6 py-3 hover:bg-gray-100 dark:hover:bg-dark-300 text-left transition">
+                                <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-shield-alt text-purple-600"></i>
+                                </div>
+                                <span class="text-gray-700 dark:text-gray-300">Admin Panel</span>
+                            </button>
+                        </div>
+                        <button onclick="showSettings()" class="w-full flex items-center gap-3 px-6 py-3 hover:bg-gray-100 dark:hover:bg-dark-300 text-left transition">
+                            <div class="w-10 h-10 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center">
+                                <i class="fas fa-cog text-gray-600 dark:text-gray-400"></i>
+                            </div>
+                            <span class="text-gray-700 dark:text-gray-300">Beállítások</span>
+                        </button>
+                        <button onclick="logout()" class="w-full flex items-center gap-3 px-6 py-3 hover:bg-red-50 dark:hover:bg-red-900/20 text-left transition">
+                            <div class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                                <i class="fas fa-sign-out-alt text-red-600"></i>
+                            </div>
+                            <span class="text-red-600">Kijelentkezés</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-20 min-h-screen pb-6">
+        <!-- Feed Section -->
+        <section id="feedSection" class="max-w-2xl mx-auto px-4">
+            <!-- Stories -->
+            <div class="glass rounded-2xl p-4 mb-6 overflow-x-auto scrollbar-hide">
+                <div id="storiesContainer" class="flex gap-4">
+                    <div onclick="openStoryModal()" class="flex-shrink-0 cursor-pointer group">
+                        <div class="w-28 h-44 bg-gray-100 dark:bg-dark-300 rounded-2xl relative overflow-hidden hover-scale">
+                            <img id="storyAvatar" src="" class="w-full h-3/4 object-cover">
+                            <div class="absolute bottom-0 inset-x-0 h-1/3 bg-white dark:bg-dark-200 flex flex-col items-center justify-center">
+                                <div class="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center -mt-4 ring-4 ring-white dark:ring-dark-200">
+                                    <i class="fas fa-plus text-white text-sm"></i>
+                                </div>
+                                <span class="text-xs font-medium text-gray-700 dark:text-gray-300 mt-1">Történet</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Post -->
+            <div class="glass rounded-2xl p-4 mb-6 card">
+                <div class="flex items-center gap-3">
+                    <img id="postAvatar" src="" class="w-12 h-12 rounded-full ring-2 ring-gray-200 dark:ring-dark-300">
+                    <button onclick="openPostModal()" class="flex-1 bg-gray-100 dark:bg-dark-300 rounded-full px-6 py-3 text-left text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                        Mi jár a fejedben?
+                    </button>
+                </div>
+                <hr class="my-4 border-gray-200 dark:border-dark-300">
+                <div class="flex justify-around">
+                    <button onclick="openPostModal()" class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-300 px-6 py-2 rounded-xl transition">
+                        <i class="fas fa-image text-green-500 text-lg"></i>
+                        <span class="font-medium">Fotó</span>
+                    </button>
+                    <button onclick="openPostModal()" class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-300 px-6 py-2 rounded-xl transition">
+                        <i class="fas fa-video text-red-500 text-lg"></i>
+                        <span class="font-medium">Videó</span>
+                    </button>
+                    <button onclick="openPostModal()" class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-300 px-6 py-2 rounded-xl transition">
+                        <i class="fas fa-smile text-yellow-500 text-lg"></i>
+                        <span class="font-medium">Érzés</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Posts Container -->
+            <div id="postsContainer" class="space-y-6"></div>
+        </section>
+
+        <!-- Messenger Section -->
+        <section id="messengerSection" class="hidden h-[calc(100vh-5rem)] max-w-6xl mx-auto px-4">
+            <div class="glass rounded-2xl h-full flex overflow-hidden">
+                <div class="w-80 border-r border-gray-200 dark:border-dark-300 flex flex-col">
+                    <div class="p-4 border-b border-gray-200 dark:border-dark-300">
+                        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Csevegések</h2>
+                        <div class="relative mt-3">
+                            <i class="fas fa-search absolute left-4 top-3 text-gray-400"></i>
+                            <input type="text" placeholder="Keresés..." class="w-full bg-gray-100 dark:bg-dark-300 rounded-full pl-12 pr-4 py-2.5 text-gray-800 dark:text-white">
+                        </div>
+                    </div>
+                    <div id="chatList" class="flex-1 overflow-y-auto scrollbar-hide"></div>
+                </div>
+                <div id="chatArea" class="flex-1 flex flex-col bg-gray-50 dark:bg-dark-100">
+                    <div class="flex-1 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="w-24 h-24 bg-gradient-to-br from-primary-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-comments text-4xl text-white"></i>
+                            </div>
+                            <p class="text-xl font-semibold text-gray-700 dark:text-gray-300">Üzeneteid</p>
+                            <p class="text-gray-500">Válassz egy beszélgetést</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Friends Section -->
+        <section id="friendsSection" class="hidden max-w-4xl mx-auto px-4">
+            <div class="glass rounded-2xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Barátok</h2>
+                <div class="flex gap-2 mb-6 flex-wrap">
+                    <button onclick="showFriendTab('all')" class="friend-tab px-5 py-2.5 rounded-full bg-primary-500 text-white font-medium transition">Összes barát</button>
+                    <button onclick="showFriendTab('requests')" class="friend-tab px-5 py-2.5 rounded-full bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-dark-400 transition">Barátkérelmek</button>
+                    <button onclick="showFriendTab('suggestions')" class="friend-tab px-5 py-2.5 rounded-full bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-dark-400 transition">Javaslatok</button>
+                </div>
+                <div id="friendsContent"></div>
+            </div>
+        </section>
+
+        <!-- Profile Section -->
+        <section id="profileSection" class="hidden">
+            <div class="glass">
+                <div class="max-w-4xl mx-auto">
+                    <div class="h-72 bg-gradient-to-r from-primary-400 via-purple-500 to-pink-500 rounded-b-3xl relative overflow-hidden">
+                        <img id="profileCover" src="" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+                    </div>
+                    <div class="px-6 pb-6 relative">
+                        <div class="absolute -top-20 left-6">
+                            <img id="profileAvatar" src="" class="w-40 h-40 rounded-full border-4 border-white dark:border-dark-200 object-cover shadow-2xl">
+                        </div>
+                        <div class="ml-48 pt-4 flex items-end justify-between">
+                            <div>
+                                <h1 id="profileName" class="text-3xl font-bold text-gray-800 dark:text-white"></h1>
+                                <p id="profileFriendCount" class="text-gray-500 dark:text-gray-400"></p>
+                                <p id="profileBio" class="text-gray-600 dark:text-gray-400 mt-2"></p>
+                            </div>
+                            <button id="profileActionBtn" class="hidden btn-primary text-white px-6 py-2.5 rounded-full font-medium"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="max-w-4xl mx-auto p-4">
+                <div id="profilePosts" class="space-y-6"></div>
+            </div>
+        </section>
+
+        <!-- Notifications Section -->
+        <section id="notificationsSection" class="hidden max-w-2xl mx-auto px-4">
+            <div class="glass rounded-2xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Értesítések</h2>
+                <div id="notificationsList" class="space-y-2"></div>
+            </div>
+        </section>
+
+        <!-- Admin Section -->
+        <section id="adminSection" class="hidden max-w-5xl mx-auto px-4">
+            <div class="glass rounded-2xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-white text-xl"></i>
+                    </div>
+                    Admin Panel
+                </h2>
+                <div class="grid md:grid-cols-3 gap-4 mb-8">
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-blue-100">Felhasználók</p>
+                                <p id="adminUserCount" class="text-4xl font-bold mt-1">0</p>
+                            </div>
+                            <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
+                                <i class="fas fa-users text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-500 to-emerald-600 p-6 rounded-2xl text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-green-100">Posztok</p>
+                                <p id="adminPostCount" class="text-4xl font-bold mt-1">0</p>
+                            </div>
+                            <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
+                                <i class="fas fa-newspaper text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-500 to-pink-600 p-6 rounded-2xl text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-purple-100">Üzenetek</p>
+                                <p id="adminMsgCount" class="text-4xl font-bold mt-1">0</p>
+                            </div>
+                            <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
+                                <i class="fas fa-comment-dots text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Felhasználók kezelése</h3>
+                <div id="adminUserList" class="space-y-3"></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Post Modal -->
+<div id="postModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="glass rounded-2xl w-full max-w-lg slide-in dark:bg-dark-200">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white">Bejegyzés létrehozása</h3>
+            <button onclick="closePostModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center transition">
+                <i class="fas fa-times text-gray-500"></i>
+            </button>
+        </div>
+        <div class="p-4">
+            <div class="flex items-center gap-3 mb-4">
+                <img id="modalAvatar" src="" class="w-12 h-12 rounded-full ring-2 ring-primary-500">
+                <span id="modalName" class="font-semibold text-gray-800 dark:text-white"></span>
+            </div>
+            <textarea id="postContent" rows="4" placeholder="Mi jár a fejedben?" 
+                class="w-full resize-none text-lg bg-transparent text-gray-800 dark:text-white placeholder-gray-400"></textarea>
+            <div id="imagePreview" class="hidden mb-4 relative">
+                <img id="previewImg" src="" class="max-h-72 rounded-xl w-full object-cover">
+                <button onclick="removeImage()" class="absolute top-2 right-2 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-dark-300 rounded-xl">
+                <span class="flex-1 font-medium text-gray-700 dark:text-gray-300">Hozzáadás</span>
+                <label class="cursor-pointer p-2 hover:bg-gray-200 dark:hover:bg-dark-400 rounded-full transition">
+                    <i class="fas fa-image text-green-500 text-xl"></i>
+                    <input type="file" id="postImage" accept="image/*" class="hidden" onchange="previewImage(this)">
+                </label>
+                <button class="p-2 hover:bg-gray-200 dark:hover:bg-dark-400 rounded-full transition">
+                    <i class="fas fa-smile text-yellow-500 text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-4 border-t border-gray-200 dark:border-dark-300">
+            <button onclick="createPost()" class="w-full btn-primary text-white py-3 rounded-xl font-semibold text-lg">
+                Közzététel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Story Modal -->
+<div id="storyModal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+    <div class="max-w-lg w-full slide-in">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-white">Történet létrehozása</h3>
+            <button onclick="closeStoryModal()" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
+                <i class="fas fa-times text-white"></i>
+            </button>
+        </div>
+        <div class="bg-dark-200 rounded-2xl p-6">
+            <div id="storyPreview" class="hidden mb-4">
+                <img id="storyPreviewImg" src="" class="max-h-96 rounded-xl w-full object-cover">
+            </div>
+            <label class="block w-full p-12 border-2 border-dashed border-gray-500 rounded-xl text-center cursor-pointer hover:border-primary-500 transition">
+                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                <p class="text-gray-400">Kattints a kép feltöltéséhez</p>
+                <input type="file" id="storyImage" accept="image/*" class="hidden" onchange="previewStory(this)">
+            </label>
+            <button onclick="createStory()" class="w-full btn-primary text-white py-3 rounded-xl font-semibold text-lg mt-4">
+                Történet megosztása
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="glass rounded-2xl w-full max-w-lg slide-in dark:bg-dark-200">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white">Beállítások</h3>
+            <button onclick="closeSettings()" class="w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center transition">
+                <i class="fas fa-times text-gray-500"></i>
+            </button>
+        </div>
+        <div class="p-4 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Név</label>
+                <input type="text" id="settingsName" class="w-full p-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Profilkép URL</label>
+                <input type="text" id="settingsAvatar" class="w-full p-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Borítókép URL</label>
+                <input type="text" id="settingsCover" class="w-full p-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bemutatkozás</label>
+                <textarea id="settingsBio" rows="3" class="w-full p-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white resize-none"></textarea>
+            </div>
+        </div>
+        <div class="p-4 border-t border-gray-200 dark:border-dark-300">
+            <button onclick="saveSettings()" class="w-full btn-primary text-white py-3 rounded-xl font-semibold">Mentés</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+<script>
+// ============ CONFIG ============
+const API_URL = window.location.origin + '/api';
+let socket;
+let currentUser = null;
+let currentChat = null;
+let token = localStorage.getItem('token');
+
+// ============ UTILITIES ============
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        info: 'bg-blue-500'
+    };
+    const toast = document.createElement('div');
+    toast.className = `${colors[type]} text-white px-6 py-3 rounded-xl shadow-lg slide-in flex items-center gap-3`;
+    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation' : 'info'}-circle"></i>${message}`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function getTimeAgo(date) {
+    const seconds = Math.floor((Date.now() - new Date(date)) / 1000);
+    if (seconds < 60) return 'Most';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} perce`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} órája`;
+    return `${Math.floor(seconds / 86400)} napja`;
+}
+
+async function api(endpoint, options = {}) {
+    try {
+        const res = await fetch(API_URL + endpoint, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : '',
+                ...options.headers
+            }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Hiba történt');
+        return data;
+    } catch (error) {
+        showToast(error.message, 'error');
+        throw error;
+    }
+}
+
+// ============ AUTH ============
+async function login() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    try {
+        const data = await api('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+        });
+        token = data.token;
+        currentUser = data.user;
+        localStorage.setItem('token', token);
+        showApp();
+        showToast('Sikeres bejelentkezés!', 'success');
+    } catch (error) {}
+}
+
+async function register() {
+    const name = document.getElementById('regName').value;
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
+    
+    if (!name || !email || !password) {
+        showToast('Minden mező kitöltése kötelező!', 'error');
+        return;
+    }
+    
+    try {
+        const data = await api('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ name, email, password })
+        });
+        token = data.token;
+        currentUser = data.user;
+        localStorage.setItem('token', token);
+        showApp();
+        showToast('Sikeres regisztráció!', 'success');
+    } catch (error) {}
+}
+
+function logout() {
+    token = null;
+    currentUser = null;
+    localStorage.removeItem('token');
+    socket?.disconnect();
+    document.getElementById('authPage').classList.remove('hidden');
+    document.getElementById('mainApp').classList.add('hidden');
+    showToast('Kijelentkeztél', 'info');
+}
+
+function showLogin() {
+    document.getElementById('loginForm').classList.remove('hidden');
+    document.getElementById('registerForm').classList.add('hidden');
+}
+
+function showRegister() {
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('registerForm').classList.remove('hidden');
+}
+
+// ============ APP ============
+async function showApp() {
+    document.getElementById('authPage').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    
+    // Connect to socket
+    socket = io();
+    socket.emit('join', currentUser._id);
+    
+    socket.on('newPost', () => loadPosts());
+    socket.on('updatePost', () => loadPosts());
+    socket.on('deletePost', () => loadPosts());
+    socket.on('newMessage', (msg) => {
+        if (currentChat === msg.from._id || currentChat === msg.to._id) loadMessages();
+        loadChatList();
+        updateBadges();
+    });
+    socket.on('notification', () => updateBadges());
+    socket.on('friendRequest', () => showFriendTab('requests'));
+    socket.on('typing', (userId) => {
+        if (currentChat === userId) showTypingIndicator();
+    });
+    socket.on('stopTyping', (userId) => {
+        if (currentChat === userId) hideTypingIndicator();
+    });
+    
+    updateUI();
+    showSection('feed');
+    updateBadges();
+}
+
+function updateUI() {
+    const avatar = currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=6366f1&color=fff&size=200`;
+    document.getElementById('navAvatar').src = avatar;
+    document.getElementById('menuAvatar').src = avatar;
+    document.getElementById('postAvatar').src = avatar;
+    document.getElementById('modalAvatar').src = avatar;
+    document.getElementById('storyAvatar').src = avatar;
+    document.getElementById('menuName').textContent = currentUser.name;
+    document.getElementById('modalName').textContent = currentUser.name;
+    
+    if (currentUser.isAdmin) {
+        document.getElementById('adminPanel').classList.remove('hidden');
+    }
+}
+
+async function updateBadges() {
+    try {
+        const data = await api('/notifications/unread');
+        const notifBadge = document.getElementById('notifBadge');
+        const msgBadge = document.getElementById('msgBadge');
+        
+        if (data.notifications > 0) {
+            notifBadge.textContent = data.notifications;
+            notifBadge.classList.remove('hidden');
+        } else {
+            notifBadge.classList.add('hidden');
+        }
+        
+        if (data.messages > 0) {
+            msgBadge.textContent = data.messages;
+            msgBadge.classList.remove('hidden');
+        } else {
+            msgBadge.classList.add('hidden');
+        }
+    } catch (error) {}
+}
+
+function showSection(section) {
+    const sections = ['feed', 'messenger', 'friends', 'profile', 'notifications', 'admin'];
+    sections.forEach(s => document.getElementById(s + 'Section').classList.add('hidden'));
+    document.getElementById(section + 'Section').classList.remove('hidden');
+    document.getElementById('profileMenu').classList.add('hidden');
+    
+    if (section === 'feed') { loadPosts(); loadStories(); }
+    if (section === 'messenger') loadChatList();
+    if (section === 'friends') showFriendTab('all');
+    if (section === 'profile') loadProfile(currentUser._id);
+    if (section === 'notifications') loadNotifications();
+    if (section === 'admin') loadAdminPanel();
+}
+
+function toggleProfileMenu() {
+    document.getElementById('profileMenu').classList.toggle('hidden');
+}
+
+function toggleDarkMode() {
+    document.documentElement.classList.toggle('dark');
+    const isDark = document.documentElement.classList.contains('dark');
+    localStorage.setItem('darkMode', isDark);
+    document.getElementById('themeIcon').className = `fas fa-${isDark ? 'sun' : 'moon'} text-xl text-gray-500 dark:text-gray-400`;
+}
+
+// ============ POSTS ============
+function openPostModal() {
+    document.getElementById('postModal').classList.remove('hidden');
+    document.getElementById('postContent').focus();
+}
+
+function closePostModal() {
+    document.getElementById('postModal').classList.add('hidden');
+    document.getElementById('postContent').value = '';
+    document.getElementById('imagePreview').classList.add('hidden');
+    document.getElementById('postImage').value = '';
+}
+
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('imagePreview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removeImage() {
+    document.getElementById('imagePreview').classList.add('hidden');
+    document.getElementById('postImage').value = '';
+}
+
+async function createPost() {
+    const content = document.getElementById('postContent').value;
+    const image = document.getElementById('previewImg').src;
+    const hasImage = !document.getElementById('imagePreview').classList.contains('hidden');
+    
+    if (!content && !hasImage) {
+        showToast('Írj valamit vagy adj hozzá képet!', 'error');
+        return;
+    }
+    
+    try {
+        await api('/posts', {
+            method: 'POST',
+            body: JSON.stringify({ content, image: hasImage ? image : '' })
+        });
+        closePostModal();
+        showToast('Bejegyzés közzétéve!', 'success');
+    } catch (error) {}
+}
+
+async function loadPosts() {
+    try {
+        const posts = await api('/posts');
+        renderPosts(posts, 'postsContainer');
+    } catch (error) {}
+}
+
+function renderPosts(posts, containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = posts.map(post => {
+        const isLiked = post.likes.includes(currentUser._id);
+        return `
+            <div class="glass rounded-2xl overflow-hidden card slide-in">
+                <div class="p-4">
+                    <div class="flex items-center gap-3">
+                        <img src="${post.author.avatar}" class="w-12 h-12 rounded-full cursor-pointer ring-2 ring-gray-200 dark:ring-dark-300 hover:ring-primary-500 transition" onclick="loadProfile('${post.author._id}')">
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800 dark:text-white cursor-pointer hover:underline" onclick="loadProfile('${post.author._id}')">${post.author.name}</p>
+                            <p class="text-sm text-gray-500">${getTimeAgo(post.createdAt)}</p>
+                        </div>
+                        ${post.author._id === currentUser._id || currentUser.isAdmin ? `
+                            <button onclick="deletePost('${post._id}')" class="w-10 h-10 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center transition group">
+                                <i class="fas fa-trash text-gray-400 group-hover:text-red-500"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                    <p class="mt-4 text-gray-800 dark:text-gray-200 whitespace-pre-line">${post.content}</p>
+                </div>
+                ${post.image ? `<img src="${post.image}" class="w-full max-h-[500px] object-cover">` : ''}
+                <div class="px-4 py-3 border-t border-gray-100 dark:border-dark-300 flex items-center justify-between text-sm text-gray-500">
+                    <div class="flex items-center gap-2">
+                        <div class="flex -space-x-1">
+                            ${post.likes.length > 0 ? `<div class="w-5 h-5 bg-primary-500 rounded-full flex items-center justify-center"><i class="fas fa-thumbs-up text-white text-xs"></i></div>` : ''}
+                        </div>
+                        <span>${post.likes.length} kedvelés</span>
+                    </div>
+                    <span>${post.comments.length} hozzászólás</span>
+                </div>
+                <div class="px-4 py-2 border-t border-gray-100 dark:border-dark-300 flex justify-around">
+                    <button onclick="toggleLike('${post._id}')" class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-300 transition ${isLiked ? 'text-primary-500' : 'text-gray-600 dark:text-gray-400'}">
+                        <i class="${isLiked ? 'fas' : 'far'} fa-thumbs-up text-lg"></i>
+                        <span class="font-medium">Tetszik</span>
+                    </button>
+                    <button onclick="focusComment('${post._id}')" class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-600 dark:text-gray-400">
+                        <i class="far fa-comment text-lg"></i>
+                        <span class="font-medium">Hozzászólás</span>
+                    </button>
+                    <button class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-600 dark:text-gray-400">
+                        <i class="fas fa-share text-lg"></i>
+                        <span class="font-medium">Megosztás</span>
+                    </button>
+                </div>
+                <div class="px-4 py-3 border-t border-gray-100 dark:border-dark-300">
+                    <div id="comments-${post._id}" class="space-y-3 mb-3">
+                        ${post.comments.slice(-3).map(c => `
+                            <div class="flex gap-2">
+                                <img src="${c.author?.avatar || ''}" class="w-8 h-8 rounded-full">
+                                <div class="bg-gray-100 dark:bg-dark-300 rounded-2xl px-4 py-2">
+                                    <p class="font-semibold text-sm text-gray-800 dark:text-white">${c.author?.name || 'Ismeretlen'}</p>
+                                    <p class="text-sm text-gray-700 dark:text-gray-300">${c.text}</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="flex gap-2">
+                        <img src="${currentUser.avatar}" class="w-8 h-8 rounded-full">
+                        <input type="text" id="comment-input-${post._id}" placeholder="Írj hozzászólást..." 
+                            class="flex-1 bg-gray-100 dark:bg-dark-300 rounded-full px-4 py-2 text-sm text-gray-800 dark:text-white"
+                            onkeypress="if(event.key==='Enter')addComment('${post._id}')">
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('') || '<p class="text-gray-500 text-center py-12">Még nincs bejegyzés</p>';
+}
+
+async function toggleLike(postId) {
+    try {
+        await api(`/posts/${postId}/like`, { method: 'POST' });
+    } catch (error) {}
+}
+
+function focusComment(postId) {
+    document.getElementById(`comment-input-${postId}`).focus();
+}
+
+async function addComment(postId) {
+    const input = document.getElementById(`comment-input-${postId}`);
+    const text = input.value.trim();
+    if (!text) return;
+    
+    try {
+        await api(`/posts/${postId}/comment`, {
+            method: 'POST',
+            body: JSON.stringify({ text })
+        });
+        input.value = '';
+    } catch (error) {}
+}
+
+async function deletePost(postId) {
+    if (!confirm('Biztosan törlöd?')) return;
+    try {
+        await api(`/posts/${postId}`, { method: 'DELETE' });
+        showToast('Bejegyzés törölve!', 'success');
+    } catch (error) {}
+}
+
+// ============ STORIES ============
+async function loadStories() {
+    try {
+        const stories = await api('/stories');
+        const container = document.getElementById('storiesContainer');
+        const createStory = container.firstElementChild.outerHTML;
+        
+        container.innerHTML = createStory + stories.map(story => `
+            <div class="flex-shrink-0 cursor-pointer group">
+                <div class="story-ring rounded-2xl p-0.5">
+                    <div class="w-28 h-44 rounded-2xl relative overflow-hidden">
+                        <img src="${story.image}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <img src="${story.author.avatar}" class="absolute top-2 left-2 w-8 h-8 rounded-full ring-2 ring-primary-500">
+                        <p class="absolute bottom-2 left-2 right-2 text-white text-xs font-medium truncate">${story.author.name}</p>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {}
+}
+
+function openStoryModal() {
+    document.getElementById('storyModal').classList.remove('hidden');
+}
+
+function closeStoryModal() {
+    document.getElementById('storyModal').classList.add('hidden');
+    document.getElementById('storyPreview').classList.add('hidden');
+    document.getElementById('storyImage').value = '';
+}
+
+function previewStory(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('storyPreviewImg').src = e.target.result;
+            document.getElementById('storyPreview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+async function createStory() {
+    const image = document.getElementById('storyPreviewImg').src;
+    if (!image || document.getElementById('storyPreview').classList.contains('hidden')) {
+        showToast('Válassz egy képet!', 'error');
+        return;
+    }
+    
+    try {
+        await api('/stories', {
+            method: 'POST',
+            body: JSON.stringify({ image })
+        });
+        closeStoryModal();
+        loadStories();
+        showToast('Történet megosztva!', 'success');
+    } catch (error) {}
+}
+
+// ============ MESSENGER ============
+async function loadChatList() {
+    try {
+        const users = await api('/users');
+        const conversations = await api('/messages/conversations');
+        
+        const chatMap = new Map();
+        conversations.forEach(c => chatMap.set(c.user._id, c));
+        
+        const container = document.getElementById('chatList');
+        container.innerHTML = users.map(user => {
+            const conv = chatMap.get(user._id);
+            return `
+                <div onclick="openChat('${user._id}')" class="flex items-center gap-3 p-4 hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition ${currentChat === user._id ? 'bg-primary-50 dark:bg-primary-900/20' : ''}">
+                    <div class="relative">
+                        <img src="${user.avatar}" class="w-12 h-12 rounded-full">
+                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white dark:border-dark-200 rounded-full"></span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-gray-800 dark:text-white">${user.name}</p>
+                        <p class="text-sm text-gray-500 truncate">${conv?.lastMessage?.text || 'Kezdj el beszélgetni'}</p>
+                    </div>
+                    ${conv?.unread > 0 ? `<span class="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">${conv.unread}</span>` : ''}
+                </div>
+            `;
+        }).join('');
+    } catch (error) {}
+}
+
+async function openChat(userId) {
+    currentChat = userId;
+    
+    try {
+        const user = await api(`/users/${userId}`);
+        
+        const chatArea = document.getElementById('chatArea');
+        chatArea.innerHTML = `
+            <div class="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-dark-300 bg-white dark:bg-dark-200">
+                <div class="relative">
+                    <img src="${user.avatar}" class="w-10 h-10 rounded-full">
+                    <span class="absolute bottom-0 right-0 w-3 h-3 ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white dark:border-dark-200 rounded-full"></span>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-800 dark:text-white">${user.name}</p>
+                    <p class="text-sm ${user.isOnline ? 'text-green-500' : 'text-gray-500'}">${user.isOnline ? 'Aktív most' : 'Offline'}</p>
+                </div>
+            </div>
+            <div id="messageContainer" class="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide"></div>
+            <div id="typingIndicator" class="hidden px-4 py-2">
+                <div class="flex items-center gap-2 text-gray-500 text-sm">
+                    <div class="flex gap-1">
+                        <span class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></span>
+                        <span class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></span>
+                        <span class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></span>
+                    </div>
+                    <span>${user.name} gépel...</span>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-200 dark:border-dark-300 bg-white dark:bg-dark-200 flex gap-3">
+                <button class="w-10 h-10 rounded-full bg-gray-100 dark:bg-dark-300 flex items-center justify-center text-primary-500 hover:bg-primary-100 dark:hover:bg-primary-900/30 transition">
+                    <i class="fas fa-image"></i>
+                </button>
+                <input type="text" id="messageInput" placeholder="Aa" 
+                    class="flex-1 bg-gray-100 dark:bg-dark-300 rounded-full px-5 py-2.5 text-gray-800 dark:text-white"
+                    oninput="handleTyping()"
+                    onkeypress="if(event.key==='Enter')sendMessage()">
+                <button onclick="sendMessage()" class="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-white hover:bg-primary-600 transition">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        `;
+        
+        loadMessages();
+        loadChatList();
+        updateBadges();
+    } catch (error) {}
+}
+
+async function loadMessages() {
+    if (!currentChat) return;
+    
+    try {
+        const messages = await api(`/messages/${currentChat}`);
+        const container = document.getElementById('messageContainer');
+        
+        container.innerHTML = messages.map(m => `
+            <div class="flex ${m.from === currentUser._id ? 'justify-end' : 'justify-start'}">
+                <div class="message-bubble ${m.from === currentUser._id ? 'bg-gradient-to-r from-primary-500 to-purple-500 text-white' : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-4 py-2.5">
+                    ${m.text}
+                </div>
+            </div>
+        `).join('');
+        
+        container.scrollTop = container.scrollHeight;
+    } catch (error) {}
+}
+
+let typingTimeout;
+function handleTyping() {
+    socket.emit('typing', { to: currentChat, from: currentUser._id });
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+        socket.emit('stopTyping', { to: currentChat, from: currentUser._id });
+    }, 1000);
+}
+
+function showTypingIndicator() {
+    document.getElementById('typingIndicator')?.classList.remove('hidden');
+}
+
+function hideTypingIndicator() {
+    document.getElementById('typingIndicator')?.classList.add('hidden');
+}
+
+async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const text = input.value.trim();
+    if (!text || !currentChat) return;
+    
+    try {
+        await api('/messages', {
+            method: 'POST',
+            body: JSON.stringify({ to: currentChat, text })
+        });
+        input.value = '';
+        socket.emit('stopTyping', { to: currentChat, from: currentUser._id });
+    } catch (error) {}
+}
+
+// ============ FRIENDS ============
+async function showFriendTab(tab) {
+    document.querySelectorAll('.friend-tab').forEach(btn => {
+        btn.classList.remove('bg-primary-500', 'text-white');
+        btn.classList.add('bg-gray-100', 'dark:bg-dark-300', 'text-gray-700', 'dark:text-gray-300');
+    });
+    event?.target.classList.add('bg-primary-500', 'text-white');
+    event?.target.classList.remove('bg-gray-100', 'dark:bg-dark-300', 'text-gray-700', 'dark:text-gray-300');
+    
+    const content = document.getElementById('friendsContent');
+    
+    try {
+        if (tab === 'all') {
+            const user = await api(`/users/${currentUser._id}`);
+            content.innerHTML = user.friends?.length ? `
+                <div class="grid md:grid-cols-2 gap-4">
+                    ${user.friends.map(f => `
+                        <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-dark-300 rounded-2xl">
+                            <img src="${f.avatar}" class="w-16 h-16 rounded-full cursor-pointer hover:ring-4 hover:ring-primary-200 transition" onclick="loadProfile('${f._id}')">
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-800 dark:text-white cursor-pointer hover:underline" onclick="loadProfile('${f._id}')">${f.name}</p>
+                            </div>
+                            <button onclick="openChat('${f._id}'); showSection('messenger')" class="px-4 py-2 bg-primary-100 dark:bg-primary-900/30 text-primary-600 rounded-xl font-medium hover:bg-primary-200 transition">
+                                <i class="fas fa-comment mr-2"></i>Üzenet
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '<p class="text-gray-500 text-center py-12">Még nincsenek barátaid</p>';
+        } else if (tab === 'requests') {
+            const requests = await api('/friends/requests');
+            content.innerHTML = requests.length ? `
+                <div class="space-y-3">
+                    ${requests.map(r => `
+                        <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-dark-300 rounded-2xl">
+                            <img src="${r.from.avatar}" class="w-16 h-16 rounded-full">
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-800 dark:text-white">${r.from.name}</p>
+                            </div>
+                            <button onclick="acceptFriend('${r._id}')" class="px-4 py-2 btn-primary text-white rounded-xl font-medium">Elfogadás</button>
+                            <button onclick="declineFriend('${r._id}')" class="px-4 py-2 bg-gray-200 dark:bg-dark-400 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-300 transition">Elutasítás</button>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '<p class="text-gray-500 text-center py-12">Nincs függő barátkérelem</p>';
+        } else {
+            const suggestions = await api('/friends/suggestions');
+            content.innerHTML = suggestions.length ? `
+                <div class="grid md:grid-cols-3 gap-4">
+                    ${suggestions.map(u => `
+                        <div class="bg-gray-50 dark:bg-dark-300 rounded-2xl p-6 text-center card">
+                            <img src="${u.avatar}" class="w-24 h-24 rounded-full mx-auto mb-4 ring-4 ring-gray-200 dark:ring-dark-400">
+                            <p class="font-semibold text-gray-800 dark:text-white mb-4">${u.name}</p>
+                            <button onclick="sendFriendRequest('${u._id}')" class="w-full btn-primary text-white py-2.5 rounded-xl font-medium">
+                                <i class="fas fa-user-plus mr-2"></i>Barátnak jelölés
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '<p class="text-gray-500 text-center py-12">Nincs több javaslat</p>';
+        }
+    } catch (error) {}
+}
+
+async function sendFriendRequest(userId) {
+    try {
+        await api(`/friends/request/${userId}`, { method: 'POST' });
+        showFriendTab('suggestions');
+        showToast('Barátkérelem elküldve!', 'success');
+    } catch (error) {}
+}
+
+async function acceptFriend(requestId) {
+    try {
+        await api(`/friends/accept/${requestId}`, { method: 'POST' });
+        const user = await api('/auth/me');
+        currentUser = user;
+        showFriendTab('requests');
+        showToast('Barátkérelem elfogadva!', 'success');
+    } catch (error) {}
+}
+
+async function declineFriend(requestId) {
+    try {
+        await api(`/friends/decline/${requestId}`, { method: 'POST' });
+        showFriendTab('requests');
+    } catch (error) {}
+}
+
+// ============ PROFILE ============
+async function loadProfile(userId) {
+    try {
+        const user = await api(`/users/${userId}`);
+        const posts = await api(`/posts/user/${userId}`);
+        
+        showSection('profile');
+        
+        document.getElementById('profileAvatar').src = user.avatar;
+        document.getElementById('profileCover').src = user.cover || '';
+        document.getElementById('profileName').textContent = user.name;
+        document.getElementById('profileFriendCount').textContent = `${user.friends?.length || 0} barát`;
+        document.getElementById('profileBio').textContent = user.bio || '';
+        
+        renderPosts(posts, 'profilePosts');
+    } catch (error) {}
+}
+
+// ============ NOTIFICATIONS ============
+async function loadNotifications() {
+    try {
+        const notifications = await api('/notifications');
+        await api('/notifications/read', { method: 'PUT' });
+        updateBadges();
+        
+        const container = document.getElementById('notificationsList');
+        const icons = { like: 'thumbs-up', comment: 'comment', friend: 'user-plus', message: 'comment-dots' };
+        const colors = { like: 'blue', comment: 'green', friend: 'purple', message: 'pink' };
+        
+        container.innerHTML = notifications.length ? notifications.map(n => `
+            <div class="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-300 transition ${!n.read ? 'bg-primary-50 dark:bg-primary-900/10' : ''}">
+                <div class="w-12 h-12 rounded-full bg-${colors[n.type]}-100 dark:bg-${colors[n.type]}-900/30 flex items-center justify-center">
+                    <i class="fas fa-${icons[n.type]} text-${colors[n.type]}-500"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-gray-800 dark:text-white">${n.text}</p>
+                    <p class="text-sm text-gray-500">${getTimeAgo(n.createdAt)}</p>
+                </div>
+            </div>
+        `).join('') : '<p class="text-gray-500 text-center py-12">Nincs értesítés</p>';
+    } catch (error) {}
+}
+
+// ============ SETTINGS ============
+function showSettings() {
+    document.getElementById('settingsModal').classList.remove('hidden');
+    document.getElementById('settingsName').value = currentUser.name;
+    document.getElementById('settingsAvatar').value = currentUser.avatar || '';
+    document.getElementById('settingsCover').value = currentUser.cover || '';
+    document.getElementById('settingsBio').value = currentUser.bio || '';
+    document.getElementById('profileMenu').classList.add('hidden');
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').classList.add('hidden');
+}
+
+async function saveSettings() {
+    try {
+        const data = await api('/users/profile', {
+            method: 'PUT',
+            body: JSON.stringify({
+                name: document.getElementById('settingsName').value,
+                avatar: document.getElementById('settingsAvatar').value,
+                cover: document.getElementById('settingsCover').value,
+                bio: document.getElementById('settingsBio').value
+            })
+        });
+        currentUser = data;
+        updateUI();
+        closeSettings();
+        showToast('Beállítások mentve!', 'success');
+    } catch (error) {}
+}
+
+// ============ ADMIN ============
+async function loadAdminPanel() {
+    if (!currentUser.isAdmin) return;
+    
+    try {
+        const stats = await api('/admin/stats');
+        const users = await api('/admin/users');
+        
+        document.getElementById('adminUserCount').textContent = stats.users;
+        document.getElementById('adminPostCount').textContent = stats.posts;
+        document.getElementById('adminMsgCount').textContent = stats.messages;
+        
+        document.getElementById('adminUserList').innerHTML = users.map(u => `
+            <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-dark-300 rounded-xl">
+                <img src="${u.avatar}" class="w-12 h-12 rounded-full">
+                <div class="flex-1">
+                    <p class="font-semibold text-gray-800 dark:text-white">
+                        ${u.name}
+                        ${u.isAdmin ? '<span class="ml-2 text-xs bg-primary-100 text-primary-600 px-2 py-1 rounded-full">Admin</span>' : ''}
+                    </p>
+                    <p class="text-sm text-gray-500">${u.email}</p>
+                </div>
+                ${!u.isAdmin ? `
+                    <button onclick="deleteUser('${u._id}')" class="w-10 h-10 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center transition group">
+                        <i class="fas fa-trash text-gray-400 group-hover:text-red-500"></i>
+                    </button>
+                ` : ''}
+            </div>
+        `).join('');
+    } catch (error) {}
+}
+
+async function deleteUser(userId) {
+    if (!confirm('Biztosan törlöd ezt a felhasználót?')) return;
+    try {
+        await api(`/admin/users/${userId}`, { method: 'DELETE' });
+        loadAdminPanel();
+        showToast('Felhasználó törölve!', 'success');
+    } catch (error) {}
+}
+
+// ============ INIT ============
+if (localStorage.getItem('darkMode') === 'true') {
+    document.documentElement.classList.add('dark');
+    document.getElementById('themeIcon').className = 'fas fa-sun text-xl text-gray-500 dark:text-gray-400';
+}
+
+if (token) {
+    api('/auth/me').then(user => {
+        currentUser = user;
+        showApp();
+    }).catch(() => {
+        localStorage.removeItem('token');
+        token = null;
+    });
+}
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#profileMenu') && !e.target.closest('[onclick="toggleProfileMenu()"]')) {
+        document.getElementById('profileMenu').classList.add('hidden');
+    }
+});
+</script>
+
+</body>
+</html>
