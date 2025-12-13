@@ -289,13 +289,13 @@
                     <i id="themeIcon" class="fas fa-moon text-gray-700 dark:text-gray-300"></i>
                 </button>
                 
-                <div class="relative">
+                <div class="relative z-[100]">
                     <button onclick="toggleUserMenu()" class="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full p-1 transition">
                         <img id="navAvatar" src="" class="w-9 h-9 rounded-full object-cover">
                     </button>
                     
                     <!-- User Dropdown -->
-                    <div id="userMenu" class="hidden absolute right-0 top-12 w-72 bg-white dark:bg-dark-200 rounded-xl shadow-2xl border border-gray-200 dark:border-dark-300 slide-up">
+                    <div id="userMenu" class="hidden absolute right-0 lg:right-auto lg:left-0 lg:-translate-x-1/2 top-12 w-72 bg-white dark:bg-dark-200 rounded-xl shadow-2xl border border-gray-200 dark:border-dark-300 slide-up z-[100]">
                         <div class="p-2">
                             <div onclick="navigate('profile', currentUser._id)" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
                                 <img id="menuAvatar" src="" class="w-10 h-10 rounded-full">
@@ -335,7 +335,7 @@
     </nav>
 
     <!-- Right Sidebar - Friends List (Fixed) -->
-    <aside id="rightSidebar" class="fixed right-0 top-14 w-72 h-[calc(100vh-3.5rem)] bg-white dark:bg-dark-200 border-l border-gray-200 dark:border-dark-300 hidden lg:block overflow-y-auto z-50">
+    <aside id="rightSidebar" class="fixed right-0 top-14 w-72 h-[calc(100vh-3.5rem)] bg-white dark:bg-dark-200 border-l border-gray-200 dark:border-dark-300 hidden lg:block overflow-y-auto z-30">
         <div class="p-4">
             <!-- Csoportok -->
             <div class="mb-6">
@@ -610,7 +610,7 @@
     </main>
     
     <!-- ========== FLOATING CHAT WINDOWS ========== -->
-    <div id="chatWindowsContainer" class="fixed bottom-0 right-[304px] flex items-end gap-2 z-40"></div>
+    <div id="chatWindowsContainer" class="fixed bottom-0 right-[304px] flex items-end gap-2 z-20"></div>
     
 </div>
 
