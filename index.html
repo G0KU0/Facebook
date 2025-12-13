@@ -2153,6 +2153,16 @@ function getRelationshipText(status) {
     return texts[status] || '';
 }
 
+function calculateAge(birthDate) {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
+
 async function loadProfile(userIdOrUsername) {
     try {
         let user;
@@ -2189,6 +2199,18 @@ async function loadProfile(userIdOrUsername) {
         
         if (user.bio) {
             infoHTML += `<p class="text-gray-600 dark:text-gray-400 text-center pb-3 border-b border-gray-100 dark:border-dark-300">${user.bio}</p>`;
+        }
+        
+        // Születési dátum és életkor
+        if (user.birthDate) {
+            const birthDate = new Date(user.birthDate);
+            const age = calculateAge(birthDate);
+            const formattedDate = birthDate.toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' });
+            infoHTML += `
+                <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-birthday-cake w-5 text-gray-400"></i>
+                    <span>${formattedDate} <span class="text-gray-500">(${age} éves)</span></span>
+                </div>`;
         }
         
         if (user.workplace) {
