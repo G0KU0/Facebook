@@ -941,6 +941,12 @@ async function initApp() {
     socket = io();
     socket.emit('join', currentUser._id);
     
+    // Frissítjük a currentUser-t a friends tömbbel
+    try {
+        const fullUser = await api(`/users/${currentUser._id}`);
+        currentUser.friends = fullUser.friends;
+    } catch (e) {}
+    
     socket.on('newMessage', (msg) => {
         const odorId = msg.from._id === currentUser._id ? msg.to._id : msg.from._id;
         // Update floating chat if open
@@ -978,8 +984,10 @@ async function initApp() {
     
     // Update UI
     updateUserUI();
-    navigate('feed');
     updateBadges();
+    
+    // Return promise
+    return Promise.resolve();
 }
 
 function updateUserUI() {
@@ -1869,9 +1877,9 @@ async function loadProfile(userIdOrUsername) {
         document.getElementById('profileFriendCount').textContent = `${user.friends?.length || 0} barát`;
         document.getElementById('profileBio').textContent = user.bio || '';
         
-        // URL frissítése username-re
-        if (user.username) {
-            window.history.replaceState({}, '', `/${user.username}`);
+        // URL frissítése username-re (csak ha még nem ott vagyunk)
+        if (user.username && window.location.pathname !== `/${user.username}`) {
+            window.history.pushState({}, '', `/${user.username}`);
         }
         
         // Actions
@@ -2098,15 +2106,45 @@ if (localStorage.getItem('darkMode') === 'true') {
     document.getElementById('themeIcon').className = 'fas fa-sun text-gray-700 dark:text-gray-300';
 }
 
+// URL alapú routing kezelése
+function handleURLRouting() {
+    const path = window.location.pathname;
+    
+    // Ha van path (nem csak "/")
+    if (path && path !== '/' && path.length > 1) {
+        const pathPart = path.substring(1); // Levágja a "/" jelet
+        
+        // Ellenőrizzük, hogy nem egy API vagy rendszer útvonal-e
+        if (!pathPart.startsWith('api/') && !pathPart.includes('.')) {
+            // Profil oldal megnyitása username alapján
+            navigate('profile', pathPart);
+            return;
+        }
+    }
+    
+    // Alapértelmezett oldal
+    navigate('feed');
+}
+
 if (token) {
     api('/auth/me').then(user => {
         currentUser = user;
-        initApp();
+        initApp().then(() => {
+            // URL routing kezelése bejelentkezés után
+            handleURLRouting();
+        });
     }).catch(() => {
         localStorage.removeItem('token');
         token = null;
     });
 }
+
+// Böngésző vissza/előre gomb kezelése
+window.addEventListener('popstate', () => {
+    if (currentUser) {
+        handleURLRouting();
+    }
+});
 
 // Close menus on outside click
 document.addEventListener('click', (e) => {
