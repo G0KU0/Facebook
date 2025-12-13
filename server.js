@@ -461,6 +461,18 @@ app.post('/api/stories', auth, async (req, res) => {
     res.json(story);
 });
 
+// Story törlése
+app.delete('/api/stories/:id', auth, async (req, res) => {
+    const story = await Story.findById(req.params.id);
+    if (!story) return res.status(404).json({ error: 'Történet nem található!' });
+    if (story.author.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+        return res.status(403).json({ error: 'Nincs jogosultságod!' });
+    }
+    await story.deleteOne();
+    io.emit('storyDeleted', req.params.id);
+    res.json({ message: 'Történet törölve!' });
+});
+
 // ============ ADMIN ROUTES ============
 
 app.get('/api/admin/stats', auth, adminAuth, async (req, res) => {
@@ -496,6 +508,7 @@ io.on('connection', (socket) => {
     socket.on('join', async (userId) => {
         socket.join(userId);
         onlineUsers.set(userId, socket.id);
+        socket.userId = userId;
         await User.findByIdAndUpdate(userId, { isOnline: true });
         io.emit('userOnline', userId);
     });
@@ -506,6 +519,29 @@ io.on('connection', (socket) => {
 
     socket.on('stopTyping', ({ to, from }) => {
         io.to(to).emit('stopTyping', from);
+    });
+
+    // Hívás kezelése
+    socket.on('startCall', async ({ to, from, type }) => {
+        try {
+            const caller = await User.findById(from).select('name avatar');
+            io.to(to).emit('incomingCall', {
+                from,
+                name: caller.name,
+                avatar: caller.avatar,
+                type
+            });
+        } catch (error) {
+            console.error('Call error:', error);
+        }
+    });
+
+    socket.on('acceptCall', ({ to, from }) => {
+        io.to(to).emit('callAccepted', { from });
+    });
+
+    socket.on('endCall', ({ to }) => {
+        io.to(to).emit('callEnded');
     });
 
     socket.on('disconnect', async () => {
