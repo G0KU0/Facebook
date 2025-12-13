@@ -116,6 +116,23 @@ const FriendRequest = mongoose.model('FriendRequest', friendRequestSchema);
 const Notification = mongoose.model('Notification', notificationSchema);
 const Story = mongoose.model('Story', storySchema);
 
+// Csoport séma
+const groupSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    image: { type: String, default: '' },
+    creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    admins: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    messages: [{
+        from: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        text: String,
+        createdAt: { type: Date, default: Date.now }
+    }],
+    lastMessage: { type: Date, default: Date.now }
+}, { timestamps: true });
+
+const Group = mongoose.model('Group', groupSchema);
+
 // ============ RANDOM USERNAME GENERÁLÁS ============
 function generateRandomUsername(baseName = 'user') {
     const cleanName = baseName.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -767,6 +784,202 @@ app.delete('/api/stories/:id', auth, async (req, res) => {
     res.json({ message: 'Történet törölve!' });
 });
 
+// ============ GROUP ROUTES ============
+
+// Csoportok lekérése
+app.get('/api/groups', auth, async (req, res) => {
+    try {
+        const groups = await Group.find({ members: req.user._id })
+            .populate('members', 'firstName lastName username avatar isOnline')
+            .populate('creator', 'firstName lastName username avatar')
+            .populate('admins', 'firstName lastName username avatar')
+            .sort({ lastMessage: -1 });
+        
+        // Unread count hozzáadása
+        const groupsWithUnread = groups.map(g => ({
+            ...g.toObject(),
+            unreadCount: 0 // Később implementálható
+        }));
+        
+        res.json(groupsWithUnread);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Egy csoport lekérése
+app.get('/api/groups/:id', auth, async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id)
+            .populate('members', 'firstName lastName username avatar isOnline isAdmin isOwner')
+            .populate('creator', 'firstName lastName username avatar')
+            .populate('admins', 'firstName lastName username avatar');
+        
+        if (!group) return res.status(404).json({ error: 'Csoport nem található!' });
+        if (!group.members.some(m => m._id.toString() === req.user._id.toString())) {
+            return res.status(403).json({ error: 'Nem vagy tagja ennek a csoportnak!' });
+        }
+        
+        res.json(group);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Csoport létrehozása
+app.post('/api/groups', auth, async (req, res) => {
+    try {
+        const { name, image, members } = req.body;
+        
+        if (!name || !members || members.length < 2) {
+            return res.status(400).json({ error: 'Adj meg nevet és legalább 2 tagot!' });
+        }
+        
+        const group = await Group.create({
+            name,
+            image,
+            creator: req.user._id,
+            admins: [req.user._id],
+            members: [...new Set(members)] // Duplikációk eltávolítása
+        });
+        
+        await group.populate('members', 'firstName lastName username avatar');
+        
+        // Értesítés küldése a tagoknak
+        for (const memberId of members) {
+            if (memberId !== req.user._id.toString()) {
+                io.to(memberId).emit('addedToGroup', group);
+            }
+        }
+        
+        res.json(group);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Csoport üzenetek lekérése
+app.get('/api/groups/:id/messages', auth, async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id)
+            .populate('messages.from', 'firstName lastName username avatar isAdmin isOwner');
+        
+        if (!group) return res.status(404).json({ error: 'Csoport nem található!' });
+        
+        res.json(group.messages);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Üzenet küldése csoportba
+app.post('/api/groups/:id/messages', auth, async (req, res) => {
+    try {
+        const { text } = req.body;
+        const group = await Group.findById(req.params.id);
+        
+        if (!group) return res.status(404).json({ error: 'Csoport nem található!' });
+        if (!group.members.some(m => m.toString() === req.user._id.toString())) {
+            return res.status(403).json({ error: 'Nem vagy tagja ennek a csoportnak!' });
+        }
+        
+        group.messages.push({ from: req.user._id, text });
+        group.lastMessage = new Date();
+        await group.save();
+        
+        const message = group.messages[group.messages.length - 1];
+        await Group.populate(group, { path: 'messages.from', select: 'firstName lastName username avatar isAdmin isOwner' });
+        
+        // Értesítés a csoport tagjainak
+        group.members.forEach(memberId => {
+            io.to(memberId.toString()).emit('newGroupMessage', { 
+                groupId: group._id, 
+                message: group.messages[group.messages.length - 1] 
+            });
+        });
+        
+        res.json(message);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Tag eltávolítása
+app.delete('/api/groups/:id/members/:memberId', auth, async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id);
+        
+        if (!group) return res.status(404).json({ error: 'Csoport nem található!' });
+        if (!group.admins.some(a => a.toString() === req.user._id.toString())) {
+            return res.status(403).json({ error: 'Nincs jogosultságod!' });
+        }
+        if (group.creator.toString() === req.params.memberId) {
+            return res.status(403).json({ error: 'A létrehozó nem távolítható el!' });
+        }
+        
+        group.members = group.members.filter(m => m.toString() !== req.params.memberId);
+        group.admins = group.admins.filter(a => a.toString() !== req.params.memberId);
+        await group.save();
+        
+        io.to(req.params.memberId).emit('removedFromGroup', group._id);
+        
+        res.json({ message: 'Tag eltávolítva!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Kilépés csoportból
+app.post('/api/groups/:id/leave', auth, async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id);
+        
+        if (!group) return res.status(404).json({ error: 'Csoport nem található!' });
+        
+        if (group.creator.toString() === req.user._id.toString()) {
+            // Ha a létrehozó lép ki, a csoport törlődik
+            await group.deleteOne();
+            group.members.forEach(memberId => {
+                io.to(memberId.toString()).emit('groupDeleted', group._id);
+            });
+            return res.json({ message: 'Csoport törölve!' });
+        }
+        
+        group.members = group.members.filter(m => m.toString() !== req.user._id.toString());
+        group.admins = group.admins.filter(a => a.toString() !== req.user._id.toString());
+        await group.save();
+        
+        res.json({ message: 'Kiléptél a csoportból!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Tag hozzáadása
+app.post('/api/groups/:id/members', auth, async (req, res) => {
+    try {
+        const { userIds } = req.body;
+        const group = await Group.findById(req.params.id);
+        
+        if (!group) return res.status(404).json({ error: 'Csoport nem található!' });
+        if (!group.admins.some(a => a.toString() === req.user._id.toString())) {
+            return res.status(403).json({ error: 'Nincs jogosultságod!' });
+        }
+        
+        for (const userId of userIds) {
+            if (!group.members.some(m => m.toString() === userId)) {
+                group.members.push(userId);
+                io.to(userId).emit('addedToGroup', group);
+            }
+        }
+        
+        await group.save();
+        res.json({ message: 'Tagok hozzáadva!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ============ ADMIN ROUTES ============
 
 app.get('/api/admin/stats', auth, adminAuth, async (req, res) => {
@@ -868,6 +1081,23 @@ io.on('connection', (socket) => {
 
     socket.on('endCall', ({ to }) => {
         io.to(to).emit('callEnded');
+    });
+
+    // Csoport események
+    socket.on('groupTyping', ({ groupId, userId, userName }) => {
+        socket.to(groupId).emit('groupTyping', { groupId, userId, userName });
+    });
+
+    socket.on('stopGroupTyping', ({ groupId, userId }) => {
+        socket.to(groupId).emit('stopGroupTyping', { groupId, userId });
+    });
+
+    socket.on('joinGroup', (groupId) => {
+        socket.join(groupId);
+    });
+
+    socket.on('leaveGroup', (groupId) => {
+        socket.leave(groupId);
     });
 
     socket.on('disconnect', async () => {
