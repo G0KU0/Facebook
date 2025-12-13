@@ -175,16 +175,30 @@
                 <p class="text-gray-500 dark:text-gray-400 mb-6">Hozd létre a fiókodat pillanatok alatt.</p>
                 
                 <div class="space-y-4">
-                    <div>
-                        <input type="text" id="regName" placeholder="Teljes név" 
-                            class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 transition outline-none">
+                    <div class="flex gap-3">
+                        <input type="text" id="regFirstName" placeholder="Keresztnév" 
+                            class="w-1/2 px-4 py-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 transition outline-none">
+                        <input type="text" id="regLastName" placeholder="Vezetéknév" 
+                            class="w-1/2 px-4 py-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 transition outline-none">
+                    </div>
+                    <div class="relative">
+                        <div class="flex items-center bg-gray-100 dark:bg-dark-300 rounded-xl border-2 border-transparent focus-within:border-blue-500 transition">
+                            <span class="pl-4 text-gray-500">@</span>
+                            <input type="text" id="regUsername" placeholder="felhasznalonev" 
+                                class="flex-1 px-2 py-3 bg-transparent text-gray-800 dark:text-white outline-none"
+                                oninput="checkUsername(this.value)">
+                        </div>
+                        <div id="usernameStatus" class="absolute right-3 top-1/2 -translate-y-1/2 hidden">
+                            <i class="fas fa-check text-green-500"></i>
+                        </div>
+                        <p id="usernameHint" class="text-xs text-gray-500 mt-1 ml-1">Csak betűk, számok, pont és aláhúzás</p>
                     </div>
                     <div>
                         <input type="email" id="regEmail" placeholder="Email cím" 
                             class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 transition outline-none">
                     </div>
                     <div>
-                        <input type="password" id="regPassword" placeholder="Jelszó" 
+                        <input type="password" id="regPassword" placeholder="Jelszó (min. 6 karakter)" 
                             class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 transition outline-none"
                             onkeypress="if(event.key==='Enter')register()">
                     </div>
@@ -461,7 +475,8 @@
                         <div class="ml-36 md:ml-48 pt-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
                             <div>
                                 <h1 id="profileName" class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white"></h1>
-                                <p id="profileFriendCount" class="text-gray-500 font-medium"></p>
+                                <p id="profileUsername" class="text-gray-500 text-sm">@username</p>
+                                <p id="profileFriendCount" class="text-gray-500 font-medium mt-1"></p>
                             </div>
                             <div id="profileActions" class="flex gap-2"></div>
                         </div>
@@ -643,32 +658,46 @@
 
 <!-- Settings Modal -->
 <div id="settingsModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-md shadow-2xl slide-up">
-        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300">
+    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-md shadow-2xl slide-up max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300 sticky top-0 bg-white dark:bg-dark-200">
             <h3 class="text-xl font-bold text-gray-800 dark:text-white">Beállítások</h3>
             <button onclick="closeSettings()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
                 <i class="fas fa-times text-gray-500"></i>
             </button>
         </div>
         <div class="p-4 space-y-4">
+            <div class="flex gap-3">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Keresztnév</label>
+                    <input type="text" id="settingsFirstName" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vezetéknév</label>
+                    <input type="text" id="settingsLastName" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Név</label>
-                <input type="text" id="settingsName" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Felhasználónév</label>
+                <div class="flex items-center bg-gray-100 dark:bg-dark-300 rounded-lg px-4 py-2.5">
+                    <span class="text-gray-500 mr-1">@</span>
+                    <span id="settingsUsername" class="text-gray-800 dark:text-white"></span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">A felhasználónév nem módosítható</p>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profilkép URL</label>
-                <input type="text" id="settingsAvatar" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="settingsAvatar" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://example.com/kep.jpg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Borítókép URL</label>
-                <input type="text" id="settingsCover" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="settingsCover" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://example.com/borito.jpg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bemutatkozás</label>
-                <textarea id="settingsBio" rows="3" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                <textarea id="settingsBio" rows="3" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Írj magadról pár szót..."></textarea>
             </div>
         </div>
-        <div class="p-4 border-t border-gray-200 dark:border-dark-300">
+        <div class="p-4 border-t border-gray-200 dark:border-dark-300 sticky bottom-0 bg-white dark:bg-dark-200">
             <button onclick="saveSettings()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition">
                 Mentés
             </button>
@@ -799,16 +828,76 @@ async function login() {
     } catch (e) {}
 }
 
+let usernameAvailable = false;
+let usernameCheckTimeout;
+
+async function checkUsername(username) {
+    const statusEl = document.getElementById('usernameStatus');
+    const hintEl = document.getElementById('usernameHint');
+    
+    clearTimeout(usernameCheckTimeout);
+    
+    if (!username || username.length < 3) {
+        statusEl.classList.add('hidden');
+        hintEl.textContent = 'Minimum 3 karakter szükséges';
+        hintEl.className = 'text-xs text-gray-500 mt-1 ml-1';
+        usernameAvailable = false;
+        return;
+    }
+    
+    if (!/^[a-zA-Z0-9._]+$/.test(username)) {
+        statusEl.innerHTML = '<i class="fas fa-times text-red-500"></i>';
+        statusEl.classList.remove('hidden');
+        hintEl.textContent = 'Csak betűk, számok, pont és aláhúzás';
+        hintEl.className = 'text-xs text-red-500 mt-1 ml-1';
+        usernameAvailable = false;
+        return;
+    }
+    
+    usernameCheckTimeout = setTimeout(async () => {
+        try {
+            const res = await fetch(`${API}/auth/check-username/${username}`);
+            const data = await res.json();
+            
+            if (data.available) {
+                statusEl.innerHTML = '<i class="fas fa-check text-green-500"></i>';
+                hintEl.textContent = 'Ez a felhasználónév elérhető!';
+                hintEl.className = 'text-xs text-green-500 mt-1 ml-1';
+                usernameAvailable = true;
+            } else {
+                statusEl.innerHTML = '<i class="fas fa-times text-red-500"></i>';
+                hintEl.textContent = 'Ez a felhasználónév már foglalt!';
+                hintEl.className = 'text-xs text-red-500 mt-1 ml-1';
+                usernameAvailable = false;
+            }
+            statusEl.classList.remove('hidden');
+        } catch (e) {}
+    }, 500);
+}
+
 async function register() {
-    const name = document.getElementById('regName').value;
-    const email = document.getElementById('regEmail').value;
+    const firstName = document.getElementById('regFirstName').value.trim();
+    const lastName = document.getElementById('regLastName').value.trim();
+    const username = document.getElementById('regUsername').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
     const password = document.getElementById('regPassword').value;
-    if (!name || !email || !password) return toast('Töltsd ki az összes mezőt!', 'error');
+    
+    if (!firstName || !lastName || !username || !email || !password) {
+        return toast('Töltsd ki az összes mezőt!', 'error');
+    }
+    
+    if (!usernameAvailable) {
+        return toast('Válassz egy elérhető felhasználónevet!', 'error');
+    }
+    
+    if (password.length < 6) {
+        return toast('A jelszó minimum 6 karakter legyen!', 'error');
+    }
     
     try {
         const data = await api('/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ name, email, password })
+            body: JSON.stringify({ firstName, lastName, username, email, password })
         });
         token = data.token;
         currentUser = data.user;
@@ -954,26 +1043,39 @@ function handleSearch(query) {
         return;
     }
     
-    const filtered = allUsers.filter(u => 
-        u.name.toLowerCase().includes(query.toLowerCase()) ||
-        u.email.toLowerCase().includes(query.toLowerCase())
-    );
+    const queryLower = query.toLowerCase();
+    const filtered = allUsers.filter(u => {
+        const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
+        const username = (u.username || '').toLowerCase();
+        const email = (u.email || '').toLowerCase();
+        
+        return fullName.includes(queryLower) ||
+               username.includes(queryLower) ||
+               email.includes(queryLower) ||
+               (u.firstName && u.firstName.toLowerCase().includes(queryLower)) ||
+               (u.lastName && u.lastName.toLowerCase().includes(queryLower));
+    });
     
     if (filtered.length === 0) {
         results.innerHTML = '<p class="text-gray-500 text-center py-4">Nincs találat</p>';
     } else {
         results.innerHTML = filtered.map(u => `
-            <div onclick="navigate('profile', '${u._id}')" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
+            <div onclick="navigateToProfile('${u.username}')" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
                 <img src="${getAvatar(u)}" class="w-10 h-10 rounded-full">
                 <div>
-                    <p class="font-semibold text-gray-800 dark:text-white text-sm">${u.name}</p>
-                    <p class="text-xs text-gray-500">${u.email}</p>
+                    <p class="font-semibold text-gray-800 dark:text-white text-sm">${u.firstName} ${u.lastName}</p>
+                    <p class="text-xs text-gray-500">@${u.username}</p>
                 </div>
             </div>
         `).join('');
     }
     
     dropdown.classList.remove('hidden');
+}
+
+function navigateToProfile(username) {
+    window.history.pushState({}, '', `/${username}`);
+    navigate('profile', username);
 }
 
 function showSearchDropdown() {
