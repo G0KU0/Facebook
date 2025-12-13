@@ -410,16 +410,37 @@ app.get('/api/users/username/:username', auth, async (req, res) => {
 // Profil frissítése
 app.put('/api/users/profile', auth, async (req, res) => {
     try {
-        const { avatar, cover, bio, firstName, lastName, workplace, jobTitle, school, college, currentCity, hometown, relationship } = req.body;
+        const { avatar, cover, bio, firstName, lastName, workplace, jobTitle, school, college, currentCity, hometown, relationship, birthDate } = req.body;
         
         // Vezetéknév kötelező, kivéve ha tulajdonos
         if (!req.user.isOwner && (!lastName || !lastName.trim())) {
             return res.status(400).json({ error: 'A vezetéknév megadása kötelező!' });
         }
         
+        // Frissítendő adatok
+        const updateData = { 
+            avatar, cover, bio, firstName, lastName: lastName || '', 
+            workplace, jobTitle, school, college, currentCity, hometown, relationship 
+        };
+        
+        // Születési dátum csak akkor állítható be, ha még nincs megadva
+        if (birthDate && !req.user.birthDate) {
+            const birth = new Date(birthDate);
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            if (age < 13) {
+                return res.status(400).json({ error: 'Minimum 13 éves kort kell betöltened!' });
+            }
+            updateData.birthDate = birth;
+        }
+        
         const user = await User.findByIdAndUpdate(
             req.user._id, 
-            { avatar, cover, bio, firstName, lastName: lastName || '', workplace, jobTitle, school, college, currentCity, hometown, relationship }, 
+            updateData, 
             { new: true }
         ).select('-password');
         res.json(user);
