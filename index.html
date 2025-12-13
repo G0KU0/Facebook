@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialBook - Közösségi Oldal</title>
+    <title>SocialBook</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -15,8 +15,8 @@
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        primary: { 50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81' },
-                        dark: { 100: '#1e1e1e', 200: '#2d2d2d', 300: '#3d3d3d', 400: '#4d4d4d', 500: '#5d5d5d' }
+                        primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
+                        dark: { 100: '#18191a', 200: '#242526', 300: '#3a3b3c', 400: '#4e4f50', 500: '#65676b', 600: '#b0b3b8', 700: '#e4e6eb' }
                     }
                 }
             }
@@ -25,125 +25,112 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.3); }
-        .dark .glass { background: rgba(30, 30, 30, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-thin::-webkit-scrollbar { width: 6px; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .hover-scale { transition: transform 0.2s ease; }
-        .hover-scale:hover { transform: scale(1.02); }
-        .animate-float { animation: float 3s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .message-bubble { max-width: 70%; word-wrap: break-word; }
-        .typing-dot { animation: typingBounce 1.4s ease-in-out infinite; }
-        .typing-dot:nth-child(1) { animation-delay: 0s; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-10px); } }
-        .story-ring { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); padding: 3px; }
-        .notification-pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.1); } }
-        .slide-in { animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .slide-up { animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
-        .fade-in { animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        input:focus, textarea:focus { outline: none; }
-        .btn-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); transition: all 0.3s ease; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4); }
-        .card { transition: all 0.3s ease; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); }
-        .dark .card:hover { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
         
-        /* Chat Window Styles */
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #65676b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8a8d91; }
+        
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes ring { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
+        @keyframes ripple { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(2); opacity: 0; } }
+        
+        .fade-in { animation: fadeIn 0.3s ease; }
+        .slide-up { animation: slideUp 0.3s ease; }
+        .slide-in { animation: slideIn 0.3s ease; }
+        
+        /* Chat Window */
         .chat-window {
             width: 328px;
-            height: 455px;
+            height: 450px;
             box-shadow: 0 12px 28px 0 rgba(0,0,0,0.2), 0 2px 4px 0 rgba(0,0,0,0.1);
             border-radius: 8px 8px 0 0;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
+            transition: height 0.2s ease;
         }
-        .chat-window.minimized {
-            height: 48px;
-        }
+        .chat-window.minimized { height: 44px; }
         .chat-window.minimized .chat-body,
-        .chat-window.minimized .chat-input {
-            display: none;
+        .chat-window.minimized .chat-footer { display: none; }
+        
+        /* Typing indicator */
+        .typing-dot { 
+            width: 8px; height: 8px; 
+            background: #65676b; 
+            border-radius: 50%; 
+            animation: bounce 1.4s ease-in-out infinite; 
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        /* Story ring */
+        .story-ring {
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            padding: 3px;
+            border-radius: 50%;
         }
         
-        /* Call Modal */
-        .call-overlay {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        }
-        
-        @keyframes ring {
-            0%, 100% { transform: rotate(-15deg); }
-            50% { transform: rotate(15deg); }
-        }
-        .ringing {
-            animation: ring 0.5s ease-in-out infinite;
-        }
-        
-        @keyframes ripple {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(1.5); opacity: 0; }
-        }
-        .ripple-effect::before,
-        .ripple-effect::after {
+        /* Call animation */
+        .call-ring { animation: ring 0.5s ease-in-out infinite; }
+        .ripple::before, .ripple::after {
             content: '';
             position: absolute;
-            inset: 0;
+            inset: -10px;
+            border: 3px solid currentColor;
             border-radius: 50%;
-            border: 2px solid currentColor;
             animation: ripple 1.5s ease-out infinite;
         }
-        .ripple-effect::after {
-            animation-delay: 0.5s;
-        }
+        .ripple::after { animation-delay: 0.5s; }
+        
+        /* Button hover */
+        .btn-hover { transition: all 0.2s ease; }
+        .btn-hover:hover { transform: translateY(-1px); }
+        
+        /* Search dropdown */
+        .search-dropdown { max-height: 400px; overflow-y: auto; }
+        
+        /* Active nav */
+        .nav-active { color: #2563eb; border-bottom: 3px solid #2563eb; }
+        .dark .nav-active { color: #3b82f6; border-color: #3b82f6; }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-dark-100 min-h-screen transition-colors duration-300">
+<body class="bg-gray-100 dark:bg-dark-100 transition-colors duration-200">
 
-<!-- Auth Page -->
-<div id="authPage" class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-    <div class="absolute inset-0 gradient-bg"></div>
-    <div class="absolute inset-0 opacity-30">
-        <div class="absolute top-20 left-20 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-float"></div>
-        <div class="absolute top-40 right-20 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl animate-float" style="animation-delay: 1s;"></div>
-        <div class="absolute bottom-20 left-1/2 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-float" style="animation-delay: 2s;"></div>
-    </div>
-    
-    <div class="glass rounded-3xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col lg:flex-row relative z-10 fade-in">
-        <div class="lg:w-1/2 p-10 flex flex-col justify-center text-white bg-gradient-to-br from-indigo-600/90 to-purple-700/90">
+<!-- ==================== AUTH PAGE ==================== -->
+<div id="authPage" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-700">
+    <div class="w-full max-w-5xl flex flex-col lg:flex-row bg-white dark:bg-dark-200 rounded-2xl shadow-2xl overflow-hidden fade-in">
+        <!-- Left Side -->
+        <div class="lg:w-1/2 p-8 lg:p-12 bg-gradient-to-br from-blue-600 to-purple-700 text-white flex flex-col justify-center">
             <div class="flex items-center gap-3 mb-6">
-                <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur">
-                    <i class="fas fa-rocket text-3xl"></i>
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur">
+                    <i class="fab fa-facebook text-2xl"></i>
                 </div>
-                <h1 class="text-4xl font-bold">SocialBook</h1>
+                <h1 class="text-3xl font-bold">SocialBook</h1>
             </div>
-            <p class="text-xl text-white/80 mb-8">Csatlakozz a közösséghez, oszd meg pillanataidat és építs kapcsolatokat!</p>
-            <div class="space-y-4">
+            <p class="text-lg text-white/90 mb-8">Kapcsolódj a barátaiddal és a világgal a SocialBook-on.</p>
+            <div class="space-y-4 hidden lg:block">
                 <div class="flex items-center gap-4 bg-white/10 rounded-xl p-4 backdrop-blur">
-                    <i class="fas fa-users text-2xl text-purple-200"></i>
+                    <i class="fas fa-users text-2xl"></i>
                     <div>
-                        <p class="font-semibold">Barátok</p>
-                        <p class="text-sm text-white/70">Kapcsolódj régi és új ismerősökkel</p>
+                        <p class="font-semibold">Ismerősök</p>
+                        <p class="text-sm text-white/70">Tartsd a kapcsolatot barátaiddal</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-4 bg-white/10 rounded-xl p-4 backdrop-blur">
-                    <i class="fas fa-video text-2xl text-blue-200"></i>
+                    <i class="fas fa-comments text-2xl"></i>
                     <div>
-                        <p class="font-semibold">Videóhívás</p>
-                        <p class="text-sm text-white/70">Beszélj szemtől szembe bárkivel</p>
+                        <p class="font-semibold">Messenger</p>
+                        <p class="text-sm text-white/70">Chatelj és hívd fel barátaidat</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-4 bg-white/10 rounded-xl p-4 backdrop-blur">
-                    <i class="fas fa-camera text-2xl text-pink-200"></i>
+                    <i class="fas fa-photo-video text-2xl"></i>
                     <div>
                         <p class="font-semibold">Történetek</p>
                         <p class="text-sm text-white/70">Oszd meg a pillanataidat</p>
@@ -152,374 +139,447 @@
             </div>
         </div>
         
-        <div class="lg:w-1/2 p-10 bg-white dark:bg-dark-200">
+        <!-- Right Side - Forms -->
+        <div class="lg:w-1/2 p-8 lg:p-12">
+            <!-- Login Form -->
             <div id="loginForm">
-                <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Üdv újra! 👋</h2>
-                <p class="text-gray-500 dark:text-gray-400 mb-8">Jelentkezz be a fiókodba</p>
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Bejelentkezés</h2>
+                <p class="text-gray-500 dark:text-gray-400 mb-6">Üdv újra! Jelentkezz be a fiókodba.</p>
                 
-                <div class="space-y-5">
-                    <div class="relative">
-                        <i class="fas fa-envelope absolute left-4 top-4 text-gray-400"></i>
+                <div class="space-y-4">
+                    <div>
                         <input type="email" id="loginEmail" placeholder="Email cím" 
-                            class="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 transition">
+                            class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-dark-400 transition outline-none">
                     </div>
-                    <div class="relative">
-                        <i class="fas fa-lock absolute left-4 top-4 text-gray-400"></i>
+                    <div>
                         <input type="password" id="loginPassword" placeholder="Jelszó" 
-                            class="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 transition"
+                            class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-dark-400 transition outline-none"
                             onkeypress="if(event.key==='Enter')login()">
                     </div>
-                    <button onclick="login()" class="w-full btn-primary text-white py-4 rounded-xl font-semibold text-lg">
-                        Bejelentkezés <i class="fas fa-arrow-right ml-2"></i>
+                    <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition btn-hover">
+                        Bejelentkezés
                     </button>
                 </div>
                 
-                <div class="mt-8 text-center">
-                    <span class="text-gray-500 dark:text-gray-400">Nincs még fiókod?</span>
-                    <button onclick="showRegister()" class="text-primary-600 font-semibold ml-2 hover:underline">Regisztráció</button>
+                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-dark-300 text-center">
+                    <p class="text-gray-500 dark:text-gray-400 mb-4">Nincs még fiókod?</p>
+                    <button onclick="showRegister()" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold transition btn-hover">
+                        Új fiók létrehozása
+                    </button>
                 </div>
             </div>
             
+            <!-- Register Form -->
             <div id="registerForm" class="hidden">
-                <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Csatlakozz! 🚀</h2>
-                <p class="text-gray-500 dark:text-gray-400 mb-8">Hozd létre a fiókodat</p>
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Regisztráció</h2>
+                <p class="text-gray-500 dark:text-gray-400 mb-6">Hozd létre a fiókodat pillanatok alatt.</p>
                 
-                <div class="space-y-5">
-                    <div class="relative">
-                        <i class="fas fa-user absolute left-4 top-4 text-gray-400"></i>
+                <div class="space-y-4">
+                    <div>
                         <input type="text" id="regName" placeholder="Teljes név" 
-                            class="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 transition">
+                            class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 transition outline-none">
                     </div>
-                    <div class="relative">
-                        <i class="fas fa-envelope absolute left-4 top-4 text-gray-400"></i>
+                    <div>
                         <input type="email" id="regEmail" placeholder="Email cím" 
-                            class="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 transition">
+                            class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 transition outline-none">
                     </div>
-                    <div class="relative">
-                        <i class="fas fa-lock absolute left-4 top-4 text-gray-400"></i>
+                    <div>
                         <input type="password" id="regPassword" placeholder="Jelszó" 
-                            class="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 transition"
+                            class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 transition outline-none"
                             onkeypress="if(event.key==='Enter')register()">
                     </div>
-                    <button onclick="register()" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold text-lg hover:shadow-lg hover:shadow-green-500/30 transition-all hover:-translate-y-0.5">
-                        Fiók létrehozása <i class="fas fa-check ml-2"></i>
+                    <button onclick="register()" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold transition btn-hover">
+                        Regisztráció
                     </button>
                 </div>
                 
-                <div class="mt-8 text-center">
-                    <span class="text-gray-500 dark:text-gray-400">Van már fiókod?</span>
-                    <button onclick="showLogin()" class="text-primary-600 font-semibold ml-2 hover:underline">Bejelentkezés</button>
+                <div class="mt-6 text-center">
+                    <button onclick="showLogin()" class="text-blue-600 hover:underline font-medium">
+                        Vissza a bejelentkezéshez
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Main App -->
+<!-- ==================== MAIN APP ==================== -->
 <div id="mainApp" class="hidden">
+    
     <!-- Navbar -->
-    <nav class="fixed top-0 left-0 right-0 z-40 bg-white dark:bg-dark-200 shadow-sm border-b border-gray-200 dark:border-dark-300">
-        <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
-            <div class="flex items-center gap-3">
-                <div class="flex items-center gap-2 cursor-pointer" onclick="showSection('feed')">
-                    <div class="w-10 h-10 gradient-bg rounded-full flex items-center justify-center">
-                        <i class="fas fa-rocket text-white text-lg"></i>
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-dark-200 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+            <!-- Logo & Search -->
+            <div class="flex items-center gap-2">
+                <div onclick="navigate('feed')" class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-700 transition">
+                    <i class="fab fa-facebook-f text-white text-xl"></i>
+                </div>
+                
+                <!-- Search -->
+                <div class="relative">
+                    <div class="flex items-center bg-gray-100 dark:bg-dark-300 rounded-full">
+                        <i class="fas fa-search text-gray-500 pl-3"></i>
+                        <input type="text" id="searchInput" placeholder="Keresés a SocialBookon" 
+                            class="bg-transparent px-3 py-2 w-48 lg:w-64 text-gray-800 dark:text-white outline-none text-sm"
+                            oninput="handleSearch(this.value)"
+                            onfocus="showSearchDropdown()"
+                            onblur="setTimeout(() => hideSearchDropdown(), 200)">
+                    </div>
+                    <!-- Search Results -->
+                    <div id="searchDropdown" class="hidden absolute top-12 left-0 w-80 bg-white dark:bg-dark-200 rounded-xl shadow-2xl border border-gray-200 dark:border-dark-300 search-dropdown slide-up">
+                        <div class="p-3 border-b border-gray-100 dark:border-dark-300">
+                            <h3 class="font-semibold text-gray-800 dark:text-white text-sm">Keresési eredmények</h3>
+                        </div>
+                        <div id="searchResults" class="p-2"></div>
                     </div>
                 </div>
-                <div class="relative hidden md:block">
-                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
-                    <input type="text" id="searchInput" placeholder="Keresés a SocialBookon" 
-                        class="bg-gray-100 dark:bg-dark-300 rounded-full pl-10 pr-4 py-2 w-60 text-sm text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-dark-400 transition">
-                </div>
             </div>
             
-            <div class="flex items-center gap-1">
-                <button onclick="showSection('feed')" class="nav-btn w-24 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition group border-b-2 border-transparent hover:border-primary-500" title="Főoldal">
-                    <i class="fas fa-home text-xl text-gray-500 dark:text-gray-400 group-hover:text-primary-500"></i>
+            <!-- Navigation -->
+            <div class="hidden md:flex items-center gap-2">
+                <button onclick="navigate('feed')" id="navFeed" class="nav-btn px-8 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition" title="Főoldal">
+                    <i class="fas fa-home text-xl text-gray-500 dark:text-gray-400"></i>
                 </button>
-                <button onclick="showSection('friends')" class="nav-btn w-24 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition group border-b-2 border-transparent hover:border-primary-500" title="Barátok">
-                    <i class="fas fa-user-friends text-xl text-gray-500 dark:text-gray-400 group-hover:text-primary-500"></i>
+                <button onclick="navigate('friends')" id="navFriends" class="nav-btn px-8 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition" title="Barátok">
+                    <i class="fas fa-user-friends text-xl text-gray-500 dark:text-gray-400"></i>
                 </button>
-                <button onclick="showSection('messenger')" class="nav-btn w-24 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition group border-b-2 border-transparent hover:border-primary-500 relative" title="Messenger">
-                    <i class="fab fa-facebook-messenger text-xl text-gray-500 dark:text-gray-400 group-hover:text-primary-500"></i>
+                <button onclick="navigate('messenger')" id="navMessenger" class="nav-btn px-8 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition relative" title="Messenger">
+                    <i class="fab fa-facebook-messenger text-xl text-gray-500 dark:text-gray-400"></i>
+                </button>
+                <button onclick="navigate('notifications')" id="navNotifications" class="nav-btn px-8 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition relative" title="Értesítések">
+                    <i class="fas fa-bell text-xl text-gray-500 dark:text-gray-400"></i>
+                    <span id="notifBadge" class="hidden absolute top-1 right-4 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
                 </button>
             </div>
             
+            <!-- User Menu -->
             <div class="flex items-center gap-2">
-                <button onclick="showSection('messenger')" class="w-10 h-10 bg-gray-200 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-dark-400 transition relative" title="Messenger">
+                <button id="msgBadgeBtn" onclick="navigate('messenger')" class="md:hidden w-10 h-10 bg-gray-200 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-dark-400 transition relative">
                     <i class="fab fa-facebook-messenger text-gray-700 dark:text-gray-300"></i>
-                    <span id="msgBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center notification-pulse font-semibold">0</span>
+                    <span id="msgBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
                 </button>
-                <button onclick="showSection('notifications')" class="w-10 h-10 bg-gray-200 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-dark-400 transition relative" title="Értesítések">
-                    <i class="fas fa-bell text-gray-700 dark:text-gray-300"></i>
-                    <span id="notifBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center notification-pulse font-semibold">0</span>
+                
+                <button onclick="toggleDarkMode()" class="w-10 h-10 bg-gray-200 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-dark-400 transition">
+                    <i id="themeIcon" class="fas fa-moon text-gray-700 dark:text-gray-300"></i>
                 </button>
+                
                 <div class="relative">
-                    <button onclick="toggleProfileMenu()" class="flex items-center gap-2 p-0.5 rounded-full hover:ring-4 hover:ring-gray-200 dark:hover:ring-dark-400 transition">
-                        <img id="navAvatar" src="" class="w-10 h-10 rounded-full object-cover">
+                    <button onclick="toggleUserMenu()" class="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full p-1 transition">
+                        <img id="navAvatar" src="" class="w-9 h-9 rounded-full object-cover">
                     </button>
-                    <div id="profileMenu" class="hidden absolute right-0 top-12 bg-white dark:bg-dark-200 rounded-xl shadow-2xl w-80 py-2 slide-in border border-gray-200 dark:border-dark-300">
-                        <div onclick="showSection('profile')" class="flex items-center gap-3 p-3 mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
-                            <img id="menuAvatar" src="" class="w-10 h-10 rounded-full">
-                            <span id="menuName" class="font-semibold text-gray-800 dark:text-white"></span>
-                        </div>
-                        <hr class="my-2 border-gray-200 dark:border-dark-300">
-                        <div id="adminPanel" class="hidden">
-                            <button onclick="showSection('admin')" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-dark-300 text-left transition">
-                                <div class="w-9 h-9 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-shield-alt text-purple-600"></i>
+                    
+                    <!-- User Dropdown -->
+                    <div id="userMenu" class="hidden absolute right-0 top-12 w-72 bg-white dark:bg-dark-200 rounded-xl shadow-2xl border border-gray-200 dark:border-dark-300 slide-up">
+                        <div class="p-2">
+                            <div onclick="navigate('profile', currentUser._id)" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
+                                <img id="menuAvatar" src="" class="w-10 h-10 rounded-full">
+                                <div>
+                                    <p id="menuName" class="font-semibold text-gray-800 dark:text-white"></p>
+                                    <p class="text-xs text-gray-500">Profil megtekintése</p>
                                 </div>
-                                <span class="text-gray-700 dark:text-gray-300 font-medium">Admin Panel</span>
+                            </div>
+                        </div>
+                        <hr class="border-gray-200 dark:border-dark-300">
+                        <div class="p-2">
+                            <div id="adminMenuItem" class="hidden">
+                                <button onclick="navigate('admin')" class="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-left">
+                                    <div class="w-9 h-9 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-shield-alt text-purple-600"></i>
+                                    </div>
+                                    <span class="text-gray-700 dark:text-gray-300 font-medium">Admin Panel</span>
+                                </button>
+                            </div>
+                            <button onclick="showSettings()" class="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-left">
+                                <div class="w-9 h-9 bg-gray-200 dark:bg-dark-300 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-cog text-gray-600 dark:text-gray-400"></i>
+                                </div>
+                                <span class="text-gray-700 dark:text-gray-300 font-medium">Beállítások</span>
+                            </button>
+                            <button onclick="logout()" class="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-left">
+                                <div class="w-9 h-9 bg-gray-200 dark:bg-dark-300 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-sign-out-alt text-gray-600 dark:text-gray-400"></i>
+                                </div>
+                                <span class="text-gray-700 dark:text-gray-300 font-medium">Kijelentkezés</span>
                             </button>
                         </div>
-                        <button onclick="showSettings()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-dark-300 text-left transition">
-                            <div class="w-9 h-9 bg-gray-200 dark:bg-dark-300 rounded-full flex items-center justify-center">
-                                <i class="fas fa-cog text-gray-600 dark:text-gray-400"></i>
-                            </div>
-                            <span class="text-gray-700 dark:text-gray-300 font-medium">Beállítások</span>
-                        </button>
-                        <button onclick="toggleDarkMode()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-dark-300 text-left transition">
-                            <div class="w-9 h-9 bg-gray-200 dark:bg-dark-300 rounded-full flex items-center justify-center">
-                                <i id="themeIcon" class="fas fa-moon text-gray-600 dark:text-gray-400"></i>
-                            </div>
-                            <span class="text-gray-700 dark:text-gray-300 font-medium">Téma váltása</span>
-                        </button>
-                        <hr class="my-2 border-gray-200 dark:border-dark-300">
-                        <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-dark-300 text-left transition">
-                            <div class="w-9 h-9 bg-gray-200 dark:bg-dark-300 rounded-full flex items-center justify-center">
-                                <i class="fas fa-sign-out-alt text-gray-600 dark:text-gray-400"></i>
-                            </div>
-                            <span class="text-gray-700 dark:text-gray-300 font-medium">Kijelentkezés</span>
-                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
+    <!-- Main Content Area -->
     <main class="pt-14 min-h-screen">
-        <!-- Feed Section -->
-        <section id="feedSection" class="max-w-2xl mx-auto px-4 py-4">
-            <!-- Stories -->
-            <div class="bg-white dark:bg-dark-200 rounded-xl p-4 mb-4 shadow-sm border border-gray-200 dark:border-dark-300 overflow-x-auto scrollbar-hide">
-                <div id="storiesContainer" class="flex gap-2">
-                    <div onclick="openStoryModal()" class="flex-shrink-0 cursor-pointer group">
-                        <div class="w-28 h-48 bg-gray-100 dark:bg-dark-300 rounded-xl relative overflow-hidden hover:brightness-95 transition">
-                            <img id="storyAvatar" src="" class="w-full h-3/4 object-cover">
-                            <div class="absolute bottom-0 inset-x-0 h-1/3 bg-white dark:bg-dark-200 flex flex-col items-center justify-center">
-                                <div class="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center -mt-4 ring-4 ring-white dark:ring-dark-200">
-                                    <i class="fas fa-plus text-white text-sm"></i>
-                                </div>
-                                <span class="text-xs font-medium text-gray-700 dark:text-gray-300 mt-1">Történet</span>
-                            </div>
-                        </div>
+        
+        <!-- ========== FEED PAGE ========== -->
+        <div id="feedPage" class="hidden">
+            <div class="max-w-xl mx-auto px-4 py-4">
+                <!-- Stories -->
+                <div class="bg-white dark:bg-dark-200 rounded-xl p-4 mb-4 shadow">
+                    <div id="storiesContainer" class="flex gap-3 overflow-x-auto pb-2"></div>
+                </div>
+                
+                <!-- Create Post -->
+                <div class="bg-white dark:bg-dark-200 rounded-xl p-4 mb-4 shadow">
+                    <div class="flex items-center gap-3">
+                        <img id="feedAvatar" src="" class="w-10 h-10 rounded-full">
+                        <button onclick="openPostModal()" class="flex-1 bg-gray-100 dark:bg-dark-300 rounded-full px-4 py-2.5 text-left text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                            Mi jár a fejedben?
+                        </button>
+                    </div>
+                    <hr class="my-3 border-gray-200 dark:border-dark-300">
+                    <div class="flex">
+                        <button onclick="openPostModal()" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-600 dark:text-gray-400">
+                            <i class="fas fa-video text-red-500"></i>
+                            <span class="font-medium text-sm">Élő videó</span>
+                        </button>
+                        <button onclick="openPostModal()" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-600 dark:text-gray-400">
+                            <i class="fas fa-image text-green-500"></i>
+                            <span class="font-medium text-sm">Fotó/videó</span>
+                        </button>
+                        <button onclick="openPostModal()" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-600 dark:text-gray-400">
+                            <i class="fas fa-smile text-yellow-500"></i>
+                            <span class="font-medium text-sm">Érzés</span>
+                        </button>
                     </div>
                 </div>
+                
+                <!-- Posts -->
+                <div id="postsContainer" class="space-y-4"></div>
             </div>
-
-            <!-- Create Post -->
-            <div class="bg-white dark:bg-dark-200 rounded-xl p-4 mb-4 shadow-sm border border-gray-200 dark:border-dark-300">
-                <div class="flex items-center gap-3">
-                    <img id="postAvatar" src="" class="w-10 h-10 rounded-full">
-                    <button onclick="openPostModal()" class="flex-1 bg-gray-100 dark:bg-dark-300 rounded-full px-4 py-2.5 text-left text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-400 transition text-sm">
-                        Mi jár a fejedben?
-                    </button>
-                </div>
-                <hr class="my-3 border-gray-200 dark:border-dark-300">
-                <div class="flex justify-around">
-                    <button onclick="openPostModal()" class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-300 px-4 py-2 rounded-lg transition flex-1 justify-center">
-                        <i class="fas fa-video text-red-500"></i>
-                        <span class="font-medium text-sm">Élő videó</span>
-                    </button>
-                    <button onclick="openPostModal()" class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-300 px-4 py-2 rounded-lg transition flex-1 justify-center">
-                        <i class="fas fa-image text-green-500"></i>
-                        <span class="font-medium text-sm">Fotó/videó</span>
-                    </button>
-                    <button onclick="openPostModal()" class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-300 px-4 py-2 rounded-lg transition flex-1 justify-center">
-                        <i class="fas fa-smile text-yellow-500"></i>
-                        <span class="font-medium text-sm">Érzés</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Posts Container -->
-            <div id="postsContainer" class="space-y-4"></div>
-        </section>
-
-        <!-- Messenger Section (Full Page) -->
-        <section id="messengerSection" class="hidden h-[calc(100vh-3.5rem)]">
-            <div class="h-full flex bg-white dark:bg-dark-200 border-t border-gray-200 dark:border-dark-300">
-                <div class="w-80 border-r border-gray-200 dark:border-dark-300 flex flex-col">
+        </div>
+        
+        <!-- ========== MESSENGER PAGE ========== -->
+        <div id="messengerPage" class="hidden h-[calc(100vh-3.5rem)]">
+            <div class="h-full flex">
+                <!-- Chat List -->
+                <div class="w-80 bg-white dark:bg-dark-200 border-r border-gray-200 dark:border-dark-300 flex flex-col">
                     <div class="p-4">
                         <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Csevegések</h2>
+                            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Csevegések</h1>
                             <button class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
                                 <i class="fas fa-edit text-gray-600 dark:text-gray-400"></i>
                             </button>
                         </div>
                         <div class="relative">
-                            <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
-                            <input type="text" placeholder="Keresés a Messengerben" class="w-full bg-gray-100 dark:bg-dark-300 rounded-full pl-10 pr-4 py-2 text-sm text-gray-800 dark:text-white">
+                            <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                            <input type="text" id="messengerSearch" placeholder="Keresés a Messengerben" 
+                                class="w-full bg-gray-100 dark:bg-dark-300 rounded-full pl-10 pr-4 py-2 text-sm outline-none text-gray-800 dark:text-white"
+                                oninput="filterChatList(this.value)">
                         </div>
                     </div>
-                    <div id="chatList" class="flex-1 overflow-y-auto scrollbar-thin"></div>
+                    <div id="messengerChatList" class="flex-1 overflow-y-auto px-2"></div>
                 </div>
-                <div id="messengerMainArea" class="flex-1 flex flex-col bg-white dark:bg-dark-200">
-                    <div class="flex-1 flex items-center justify-center">
+                
+                <!-- Chat Area -->
+                <div id="messengerChatArea" class="flex-1 flex flex-col bg-white dark:bg-dark-200">
+                    <div id="messengerWelcome" class="flex-1 flex items-center justify-center">
                         <div class="text-center">
-                            <div class="w-20 h-20 bg-gradient-to-br from-primary-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <i class="fab fa-facebook-messenger text-3xl text-white"></i>
+                            <div class="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fab fa-facebook-messenger text-white text-3xl"></i>
                             </div>
-                            <p class="text-xl font-semibold text-gray-700 dark:text-gray-300">Üzeneteid</p>
-                            <p class="text-gray-500 text-sm">Küldj üzenetet egy barátodnak</p>
+                            <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300">Üzeneteid</h2>
+                            <p class="text-gray-500 text-sm mt-1">Küldj privát üzeneteket egy barátodnak</p>
+                        </div>
+                    </div>
+                    <div id="messengerActiveChat" class="hidden flex-1 flex flex-col">
+                        <!-- Chat Header -->
+                        <div id="messengerChatHeader" class="h-16 border-b border-gray-200 dark:border-dark-300 flex items-center justify-between px-4"></div>
+                        <!-- Messages -->
+                        <div id="messengerMessages" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
+                        <!-- Typing -->
+                        <div id="messengerTyping" class="hidden px-4 py-2">
+                            <div class="flex items-center gap-2 text-gray-500 text-sm">
+                                <div class="flex gap-1">
+                                    <span class="typing-dot"></span>
+                                    <span class="typing-dot"></span>
+                                    <span class="typing-dot"></span>
+                                </div>
+                                <span>Gépel...</span>
+                            </div>
+                        </div>
+                        <!-- Input -->
+                        <div class="p-4 border-t border-gray-200 dark:border-dark-300">
+                            <div class="flex items-center gap-2">
+                                <button class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500 transition">
+                                    <i class="fas fa-plus-circle text-xl"></i>
+                                </button>
+                                <button class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500 transition">
+                                    <i class="fas fa-image text-xl"></i>
+                                </button>
+                                <div class="flex-1 relative">
+                                    <input type="text" id="messengerInput" placeholder="Aa" 
+                                        class="w-full bg-gray-100 dark:bg-dark-300 rounded-full px-4 py-2 pr-10 outline-none text-gray-800 dark:text-white"
+                                        oninput="handleMessengerTyping()"
+                                        onkeypress="if(event.key==='Enter')sendMessengerMessage()">
+                                    <button class="absolute right-3 top-1/2 -translate-y-1/2 text-blue-500">
+                                        <i class="far fa-smile"></i>
+                                    </button>
+                                </div>
+                                <button onclick="sendMessengerMessage()" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500 transition">
+                                    <i class="fas fa-paper-plane text-xl"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
-
-        <!-- Friends Section -->
-        <section id="friendsSection" class="hidden max-w-4xl mx-auto px-4 py-4">
-            <div class="bg-white dark:bg-dark-200 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-dark-300">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Barátok</h2>
-                <div class="flex gap-2 mb-6 flex-wrap">
-                    <button onclick="showFriendTab('all')" class="friend-tab px-4 py-2 rounded-full bg-primary-500 text-white font-medium text-sm transition">Összes barát</button>
-                    <button onclick="showFriendTab('requests')" class="friend-tab px-4 py-2 rounded-full bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 font-medium text-sm hover:bg-gray-200 dark:hover:bg-dark-400 transition">Barátkérelmek</button>
-                    <button onclick="showFriendTab('suggestions')" class="friend-tab px-4 py-2 rounded-full bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 font-medium text-sm hover:bg-gray-200 dark:hover:bg-dark-400 transition">Javaslatok</button>
+        </div>
+        
+        <!-- ========== FRIENDS PAGE ========== -->
+        <div id="friendsPage" class="hidden">
+            <div class="max-w-4xl mx-auto px-4 py-6">
+                <div class="bg-white dark:bg-dark-200 rounded-xl shadow">
+                    <div class="p-6 border-b border-gray-200 dark:border-dark-300">
+                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Barátok</h1>
+                    </div>
+                    <div class="p-4 border-b border-gray-200 dark:border-dark-300">
+                        <div class="flex gap-2 flex-wrap">
+                            <button onclick="showFriendsTab('all')" class="friends-tab px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 font-medium text-sm transition">Összes barát</button>
+                            <button onclick="showFriendsTab('requests')" class="friends-tab px-4 py-2 rounded-full bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 font-medium text-sm hover:bg-gray-200 dark:hover:bg-dark-400 transition">Barátkérelmek</button>
+                            <button onclick="showFriendsTab('suggestions')" class="friends-tab px-4 py-2 rounded-full bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 font-medium text-sm hover:bg-gray-200 dark:hover:bg-dark-400 transition">Ismerősök</button>
+                        </div>
+                    </div>
+                    <div id="friendsContent" class="p-6"></div>
                 </div>
-                <div id="friendsContent"></div>
             </div>
-        </section>
-
-        <!-- Profile Section -->
-        <section id="profileSection" class="hidden">
-            <div class="bg-white dark:bg-dark-200 shadow-sm">
+        </div>
+        
+        <!-- ========== PROFILE PAGE ========== -->
+        <div id="profilePage" class="hidden">
+            <div class="bg-white dark:bg-dark-200 shadow">
                 <div class="max-w-4xl mx-auto">
-                    <div class="h-64 md:h-80 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-dark-300 dark:to-dark-400 relative overflow-hidden rounded-b-lg">
+                    <!-- Cover -->
+                    <div class="h-64 md:h-80 bg-gradient-to-r from-gray-300 to-gray-400 dark:from-dark-300 dark:to-dark-400 relative rounded-b-lg overflow-hidden">
                         <img id="profileCover" src="" class="w-full h-full object-cover">
                     </div>
-                    <div class="px-4 pb-4 relative">
-                        <div class="absolute -top-16 left-4 md:left-8">
+                    <!-- Profile Info -->
+                    <div class="px-6 pb-4 relative">
+                        <div class="absolute -top-16 left-6">
                             <img id="profileAvatar" src="" class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-dark-200 object-cover shadow-lg">
                         </div>
                         <div class="ml-36 md:ml-48 pt-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
                             <div>
                                 <h1 id="profileName" class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white"></h1>
-                                <p id="profileFriendCount" class="text-gray-500 dark:text-gray-400 font-medium"></p>
+                                <p id="profileFriendCount" class="text-gray-500 font-medium"></p>
                             </div>
-                            <div class="flex gap-2">
-                                <button id="profileActionBtn" class="hidden btn-primary text-white px-4 py-2 rounded-lg font-medium text-sm"></button>
-                                <button onclick="openChatWithProfile()" class="bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium text-sm hover:bg-gray-200 dark:hover:bg-dark-400 transition">
-                                    <i class="fab fa-facebook-messenger mr-2"></i>Üzenet
-                                </button>
-                            </div>
+                            <div id="profileActions" class="flex gap-2"></div>
                         </div>
-                        <p id="profileBio" class="text-gray-600 dark:text-gray-400 mt-4 ml-0 md:ml-48"></p>
+                        <p id="profileBio" class="mt-4 text-gray-600 dark:text-gray-400 md:ml-48"></p>
                     </div>
                 </div>
             </div>
-            <div class="max-w-2xl mx-auto p-4">
+            <div class="max-w-xl mx-auto px-4 py-6">
                 <div id="profilePosts" class="space-y-4"></div>
             </div>
-        </section>
-
-        <!-- Notifications Section -->
-        <section id="notificationsSection" class="hidden max-w-2xl mx-auto px-4 py-4">
-            <div class="bg-white dark:bg-dark-200 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-dark-300">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Értesítések</h2>
-                <div id="notificationsList" class="space-y-1"></div>
+        </div>
+        
+        <!-- ========== NOTIFICATIONS PAGE ========== -->
+        <div id="notificationsPage" class="hidden">
+            <div class="max-w-2xl mx-auto px-4 py-6">
+                <div class="bg-white dark:bg-dark-200 rounded-xl shadow">
+                    <div class="p-6 border-b border-gray-200 dark:border-dark-300">
+                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Értesítések</h1>
+                    </div>
+                    <div id="notificationsList" class="divide-y divide-gray-100 dark:divide-dark-300"></div>
+                </div>
             </div>
-        </section>
-
-        <!-- Admin Section -->
-        <section id="adminSection" class="hidden max-w-5xl mx-auto px-4 py-4">
-            <div class="bg-white dark:bg-dark-200 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-dark-300">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-shield-alt text-white"></i>
-                    </div>
-                    Admin Panel
-                </h2>
-                <div class="grid md:grid-cols-3 gap-4 mb-8">
-                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-5 rounded-xl text-white">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-blue-100 text-sm">Felhasználók</p>
-                                <p id="adminUserCount" class="text-3xl font-bold mt-1">0</p>
+        </div>
+        
+        <!-- ========== ADMIN PAGE ========== -->
+        <div id="adminPage" class="hidden">
+            <div class="max-w-5xl mx-auto px-4 py-6">
+                <div class="bg-white dark:bg-dark-200 rounded-xl shadow">
+                    <div class="p-6 border-b border-gray-200 dark:border-dark-300">
+                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-shield-alt text-white"></i>
                             </div>
-                            <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-users text-xl"></i>
+                            Admin Panel
+                        </h1>
+                    </div>
+                    <div class="p-6">
+                        <!-- Stats -->
+                        <div class="grid md:grid-cols-3 gap-4 mb-8">
+                            <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-5 rounded-xl text-white">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-blue-100 text-sm">Felhasználók</p>
+                                        <p id="adminUsers" class="text-3xl font-bold mt-1">0</p>
+                                    </div>
+                                    <i class="fas fa-users text-3xl text-blue-200"></i>
+                                </div>
+                            </div>
+                            <div class="bg-gradient-to-br from-green-500 to-green-600 p-5 rounded-xl text-white">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-green-100 text-sm">Posztok</p>
+                                        <p id="adminPosts" class="text-3xl font-bold mt-1">0</p>
+                                    </div>
+                                    <i class="fas fa-newspaper text-3xl text-green-200"></i>
+                                </div>
+                            </div>
+                            <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-5 rounded-xl text-white">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-purple-100 text-sm">Üzenetek</p>
+                                        <p id="adminMessages" class="text-3xl font-bold mt-1">0</p>
+                                    </div>
+                                    <i class="fas fa-comments text-3xl text-purple-200"></i>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="bg-gradient-to-br from-green-500 to-emerald-600 p-5 rounded-xl text-white">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-green-100 text-sm">Posztok</p>
-                                <p id="adminPostCount" class="text-3xl font-bold mt-1">0</p>
-                            </div>
-                            <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-newspaper text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gradient-to-br from-purple-500 to-pink-600 p-5 rounded-xl text-white">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-purple-100 text-sm">Üzenetek</p>
-                                <p id="adminMsgCount" class="text-3xl font-bold mt-1">0</p>
-                            </div>
-                            <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-comment-dots text-xl"></i>
-                            </div>
-                        </div>
+                        
+                        <!-- Users List -->
+                        <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Felhasználók kezelése</h2>
+                        <div id="adminUserList" class="space-y-2"></div>
                     </div>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Felhasználók kezelése</h3>
-                <div id="adminUserList" class="space-y-2"></div>
             </div>
-        </section>
+        </div>
+        
     </main>
     
-    <!-- Floating Chat Windows Container -->
-    <div id="chatWindowsContainer" class="fixed bottom-0 right-20 flex items-end gap-2 z-50"></div>
+    <!-- ========== FLOATING CHAT WINDOWS ========== -->
+    <div id="chatWindowsContainer" class="fixed bottom-0 right-4 flex items-end gap-2 z-40"></div>
     
-    <!-- Minimized Chats Bar -->
-    <div id="minimizedChatsBar" class="fixed bottom-0 right-4 flex flex-col gap-2 z-50"></div>
 </div>
 
+<!-- ==================== MODALS ==================== -->
+
 <!-- Post Modal -->
-<div id="postModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-lg slide-in shadow-2xl">
+<div id="postModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-lg shadow-2xl slide-up">
         <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300">
             <h3 class="text-xl font-bold text-gray-800 dark:text-white">Bejegyzés létrehozása</h3>
-            <button onclick="closePostModal()" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center transition">
-                <i class="fas fa-times text-gray-500 text-xl"></i>
+            <button onclick="closePostModal()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                <i class="fas fa-times text-gray-500"></i>
             </button>
         </div>
         <div class="p-4">
             <div class="flex items-center gap-3 mb-4">
-                <img id="modalAvatar" src="" class="w-10 h-10 rounded-full">
+                <img id="postModalAvatar" src="" class="w-10 h-10 rounded-full">
                 <div>
-                    <span id="modalName" class="font-semibold text-gray-800 dark:text-white block text-sm"></span>
-                    <span class="text-xs text-gray-500"><i class="fas fa-globe-americas mr-1"></i>Nyilvános</span>
+                    <p id="postModalName" class="font-semibold text-gray-800 dark:text-white text-sm"></p>
+                    <p class="text-xs text-gray-500"><i class="fas fa-globe-americas mr-1"></i>Nyilvános</p>
                 </div>
             </div>
             <textarea id="postContent" rows="4" placeholder="Mi jár a fejedben?" 
-                class="w-full resize-none text-lg bg-transparent text-gray-800 dark:text-white placeholder-gray-400"></textarea>
-            <div id="imagePreview" class="hidden mb-4 relative">
-                <img id="previewImg" src="" class="max-h-64 rounded-lg w-full object-cover">
-                <button onclick="removeImage()" class="absolute top-2 right-2 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80 transition">
+                class="w-full bg-transparent text-gray-800 dark:text-white text-lg resize-none outline-none placeholder-gray-400"></textarea>
+            <div id="postImagePreview" class="hidden mt-4 relative">
+                <img id="postPreviewImg" src="" class="max-h-64 w-full object-cover rounded-lg">
+                <button onclick="removePostImage()" class="absolute top-2 right-2 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80 transition">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="flex items-center justify-between p-3 border border-gray-200 dark:border-dark-300 rounded-lg">
-                <span class="font-medium text-gray-700 dark:text-gray-300 text-sm">Hozzáadás a bejegyzéshez</span>
+        </div>
+        <div class="px-4 pb-4">
+            <div class="flex items-center justify-between p-3 border border-gray-200 dark:border-dark-300 rounded-lg mb-4">
+                <span class="text-gray-700 dark:text-gray-300 font-medium text-sm">Hozzáadás a bejegyzéshez</span>
                 <div class="flex gap-1">
-                    <label class="cursor-pointer w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full transition">
+                    <label class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full cursor-pointer transition">
                         <i class="fas fa-image text-green-500"></i>
-                        <input type="file" id="postImage" accept="image/*" class="hidden" onchange="previewImage(this)">
+                        <input type="file" id="postImageInput" accept="image/*" class="hidden" onchange="previewPostImage(this)">
                     </label>
                     <button class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full transition">
                         <i class="fas fa-user-tag text-blue-500"></i>
@@ -527,14 +587,9 @@
                     <button class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full transition">
                         <i class="fas fa-smile text-yellow-500"></i>
                     </button>
-                    <button class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full transition">
-                        <i class="fas fa-map-marker-alt text-red-500"></i>
-                    </button>
                 </div>
             </div>
-        </div>
-        <div class="p-4 pt-0">
-            <button onclick="createPost()" class="w-full btn-primary text-white py-2.5 rounded-lg font-semibold">
+            <button onclick="createPost()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition">
                 Közzététel
             </button>
         </div>
@@ -543,107 +598,114 @@
 
 <!-- Story Modal -->
 <div id="storyModal" class="hidden fixed inset-0 bg-black z-50 flex items-center justify-center">
-    <button onclick="closeStoryModal()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition z-10">
+    <button onclick="closeStoryModal()" class="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition z-10">
         <i class="fas fa-times text-white text-xl"></i>
     </button>
-    <div class="max-w-lg w-full mx-4">
-        <div id="storyCreateView">
-            <h3 class="text-xl font-bold text-white mb-4 text-center">Történet létrehozása</h3>
-            <div class="bg-dark-200 rounded-xl p-6">
-                <div id="storyPreview" class="hidden mb-4 relative">
-                    <img id="storyPreviewImg" src="" class="max-h-80 rounded-lg w-full object-cover">
-                    <button onclick="removeStoryPreview()" class="absolute top-2 right-2 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <label class="block w-full p-10 border-2 border-dashed border-gray-500 rounded-xl text-center cursor-pointer hover:border-primary-500 transition" id="storyUploadLabel">
-                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
-                    <p class="text-gray-400">Kattints a kép feltöltéséhez</p>
-                    <input type="file" id="storyImage" accept="image/*" class="hidden" onchange="previewStory(this)">
-                </label>
-                <button onclick="createStory()" class="w-full btn-primary text-white py-3 rounded-lg font-semibold mt-4">
-                    Megosztás a történetben
+    
+    <!-- Create Story -->
+    <div id="storyCreate" class="max-w-md w-full mx-4">
+        <h3 class="text-xl font-bold text-white mb-4 text-center">Történet létrehozása</h3>
+        <div class="bg-dark-200 rounded-xl p-6">
+            <div id="storyPreview" class="hidden mb-4 relative">
+                <img id="storyPreviewImg" src="" class="max-h-80 w-full object-cover rounded-lg">
+                <button onclick="removeStoryImage()" class="absolute top-2 right-2 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
+            <label id="storyUploadLabel" class="block w-full p-10 border-2 border-dashed border-gray-500 rounded-xl text-center cursor-pointer hover:border-blue-500 transition">
+                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                <p class="text-gray-400">Kattints a kép feltöltéséhez</p>
+                <input type="file" id="storyImageInput" accept="image/*" class="hidden" onchange="previewStoryImage(this)">
+            </label>
+            <button onclick="createStory()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold mt-4 transition">
+                Megosztás
+            </button>
         </div>
-        <div id="storyViewMode" class="hidden">
-            <div class="relative">
-                <div class="absolute top-4 left-4 right-4 flex items-center gap-3 z-10">
-                    <img id="storyViewerAvatar" src="" class="w-10 h-10 rounded-full ring-2 ring-white">
-                    <div class="flex-1">
-                        <p id="storyViewerName" class="text-white font-semibold text-sm"></p>
-                        <p id="storyViewerTime" class="text-white/70 text-xs"></p>
-                    </div>
-                    <button id="storyDeleteBtn" onclick="deleteCurrentStory()" class="hidden w-9 h-9 bg-white/10 rounded-full flex items-center justify-center hover:bg-red-500/50 transition">
-                        <i class="fas fa-trash text-white"></i>
-                    </button>
+    </div>
+    
+    <!-- View Story -->
+    <div id="storyView" class="hidden max-w-md w-full mx-4">
+        <div class="relative">
+            <div class="absolute top-4 left-4 right-4 flex items-center gap-3 z-10">
+                <img id="storyViewAvatar" src="" class="w-10 h-10 rounded-full ring-2 ring-white">
+                <div class="flex-1">
+                    <p id="storyViewName" class="text-white font-semibold text-sm"></p>
+                    <p id="storyViewTime" class="text-white/70 text-xs"></p>
                 </div>
-                <img id="storyViewerImg" src="" class="max-h-[80vh] w-full object-contain rounded-xl">
+                <button id="storyDeleteBtn" onclick="deleteStory()" class="hidden w-9 h-9 bg-white/10 hover:bg-red-500/50 rounded-full flex items-center justify-center transition">
+                    <i class="fas fa-trash text-white"></i>
+                </button>
             </div>
+            <img id="storyViewImg" src="" class="max-h-[80vh] w-full object-contain rounded-xl">
         </div>
     </div>
 </div>
 
 <!-- Settings Modal -->
-<div id="settingsModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-lg slide-in shadow-2xl">
+<div id="settingsModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-md shadow-2xl slide-up">
         <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300">
             <h3 class="text-xl font-bold text-gray-800 dark:text-white">Beállítások</h3>
-            <button onclick="closeSettings()" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center transition">
-                <i class="fas fa-times text-gray-500 text-xl"></i>
+            <button onclick="closeSettings()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                <i class="fas fa-times text-gray-500"></i>
             </button>
         </div>
         <div class="p-4 space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Név</label>
-                <input type="text" id="settingsName" class="w-full p-3 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white text-sm">
+                <input type="text" id="settingsName" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profilkép URL</label>
-                <input type="text" id="settingsAvatar" class="w-full p-3 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white text-sm">
+                <input type="text" id="settingsAvatar" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Borítókép URL</label>
-                <input type="text" id="settingsCover" class="w-full p-3 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white text-sm">
+                <input type="text" id="settingsCover" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bemutatkozás</label>
-                <textarea id="settingsBio" rows="3" class="w-full p-3 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white resize-none text-sm"></textarea>
+                <textarea id="settingsBio" rows="3" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
             </div>
         </div>
         <div class="p-4 border-t border-gray-200 dark:border-dark-300">
-            <button onclick="saveSettings()" class="w-full btn-primary text-white py-2.5 rounded-lg font-semibold">Mentés</button>
+            <button onclick="saveSettings()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition">
+                Mentés
+            </button>
         </div>
     </div>
 </div>
 
 <!-- Call Modal -->
-<div id="callModal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
-    <div class="call-overlay absolute inset-0"></div>
-    <div class="relative z-10 text-center slide-in">
+<div id="callModal" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);">
+    <div class="text-center slide-up">
         <div class="relative inline-block mb-6">
-            <div class="ripple-effect absolute inset-0 text-primary-400"></div>
+            <div class="ripple absolute inset-0 text-blue-400"></div>
             <img id="callAvatar" src="" class="w-32 h-32 rounded-full object-cover ring-4 ring-white/20 relative z-10">
         </div>
         <h3 id="callName" class="text-2xl font-bold text-white mb-2"></h3>
         <p id="callStatus" class="text-gray-300 mb-8">Hívás...</p>
+        
+        <div id="callControls" class="hidden mb-6">
+            <div class="flex justify-center gap-4">
+                <button onclick="toggleMute()" id="muteBtn" class="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <button onclick="toggleVideo()" id="videoBtn" class="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition">
+                    <i class="fas fa-video"></i>
+                </button>
+                <button class="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+            </div>
+        </div>
+        
         <div class="flex justify-center gap-6">
-            <button onclick="endCall()" class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition shadow-lg shadow-red-500/30">
+            <button onclick="endCall()" class="w-16 h-16 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white transition shadow-lg">
                 <i class="fas fa-phone-slash text-2xl"></i>
             </button>
-            <button id="acceptCallBtn" onclick="acceptCall()" class="hidden w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white hover:bg-green-600 transition shadow-lg shadow-green-500/30">
+            <button id="acceptCallBtn" onclick="acceptCall()" class="hidden w-16 h-16 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center text-white transition shadow-lg">
                 <i class="fas fa-phone text-2xl"></i>
-            </button>
-        </div>
-        <div id="callControls" class="hidden mt-8 flex justify-center gap-4">
-            <button onclick="toggleMute()" class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition" id="muteBtn">
-                <i class="fas fa-microphone"></i>
-            </button>
-            <button onclick="toggleVideo()" class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition" id="videoBtn">
-                <i class="fas fa-video"></i>
-            </button>
-            <button onclick="toggleSpeaker()" class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition">
-                <i class="fas fa-volume-up"></i>
             </button>
         </div>
     </div>
@@ -652,30 +714,32 @@
 <!-- Toast Container -->
 <div id="toastContainer" class="fixed bottom-4 left-4 z-50 space-y-2"></div>
 
+<!-- ==================== JAVASCRIPT ==================== -->
 <script>
-// ============ CONFIG ============
-const API_URL = window.location.origin + '/api';
+// ============ GLOBALS ============
 let socket;
 let currentUser = null;
-let currentChat = null;
-let currentViewingStory = null;
 let token = localStorage.getItem('token');
-let openChatWindows = new Map(); // userId -> windowElement
-let callState = { active: false, type: null, userId: null, muted: false, videoOff: false };
+let allUsers = [];
+let openChats = new Map();
+let currentMessengerChat = null;
+let currentStory = null;
+let callState = { active: false, muted: false, videoOff: false, userId: null };
+
+const API = window.location.origin + '/api';
 
 // ============ UTILITIES ============
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
-    const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-primary-500' };
+function toast(message, type = 'info') {
+    const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' };
     const icons = { success: 'check-circle', error: 'exclamation-circle', info: 'info-circle' };
-    const toast = document.createElement('div');
-    toast.className = `${colors[type]} text-white px-4 py-3 rounded-lg shadow-lg slide-in flex items-center gap-3 text-sm`;
-    toast.innerHTML = `<i class="fas fa-${icons[type]}"></i><span>${message}</span>`;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    const div = document.createElement('div');
+    div.className = `${colors[type]} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 slide-up`;
+    div.innerHTML = `<i class="fas fa-${icons[type]}"></i><span>${message}</span>`;
+    document.getElementById('toastContainer').appendChild(div);
+    setTimeout(() => div.remove(), 3000);
 }
 
-function getTimeAgo(date) {
+function timeAgo(date) {
     const seconds = Math.floor((Date.now() - new Date(date)) / 1000);
     if (seconds < 60) return 'Most';
     if (seconds < 3600) return `${Math.floor(seconds / 60)} perce`;
@@ -685,7 +749,7 @@ function getTimeAgo(date) {
 
 async function api(endpoint, options = {}) {
     try {
-        const res = await fetch(API_URL + endpoint, {
+        const res = await fetch(API + endpoint, {
             ...options,
             headers: {
                 'Content-Type': 'application/json',
@@ -696,66 +760,17 @@ async function api(endpoint, options = {}) {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Hiba történt');
         return data;
-    } catch (error) {
-        showToast(error.message, 'error');
-        throw error;
+    } catch (err) {
+        toast(err.message, 'error');
+        throw err;
     }
+}
+
+function getAvatar(user) {
+    return user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=random&size=200`;
 }
 
 // ============ AUTH ============
-async function login() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    
-    try {
-        const data = await api('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({ email, password })
-        });
-        token = data.token;
-        currentUser = data.user;
-        localStorage.setItem('token', token);
-        showApp();
-        showToast('Sikeres bejelentkezés!', 'success');
-    } catch (error) {}
-}
-
-async function register() {
-    const name = document.getElementById('regName').value;
-    const email = document.getElementById('regEmail').value;
-    const password = document.getElementById('regPassword').value;
-    
-    if (!name || !email || !password) {
-        showToast('Minden mező kitöltése kötelező!', 'error');
-        return;
-    }
-    
-    try {
-        const data = await api('/auth/register', {
-            method: 'POST',
-            body: JSON.stringify({ name, email, password })
-        });
-        token = data.token;
-        currentUser = data.user;
-        localStorage.setItem('token', token);
-        showApp();
-        showToast('Sikeres regisztráció!', 'success');
-    } catch (error) {}
-}
-
-function logout() {
-    token = null;
-    currentUser = null;
-    localStorage.removeItem('token');
-    socket?.disconnect();
-    openChatWindows.clear();
-    document.getElementById('chatWindowsContainer').innerHTML = '';
-    document.getElementById('minimizedChatsBar').innerHTML = '';
-    document.getElementById('authPage').classList.remove('hidden');
-    document.getElementById('mainApp').classList.add('hidden');
-    showToast('Kijelentkeztél', 'info');
-}
-
 function showLogin() {
     document.getElementById('loginForm').classList.remove('hidden');
     document.getElementById('registerForm').classList.add('hidden');
@@ -766,49 +781,116 @@ function showRegister() {
     document.getElementById('registerForm').classList.remove('hidden');
 }
 
-// ============ APP ============
-async function showApp() {
+async function login() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    if (!email || !password) return toast('Töltsd ki az összes mezőt!', 'error');
+    
+    try {
+        const data = await api('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+        });
+        token = data.token;
+        currentUser = data.user;
+        localStorage.setItem('token', token);
+        initApp();
+        toast('Sikeres bejelentkezés!', 'success');
+    } catch (e) {}
+}
+
+async function register() {
+    const name = document.getElementById('regName').value;
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
+    if (!name || !email || !password) return toast('Töltsd ki az összes mezőt!', 'error');
+    
+    try {
+        const data = await api('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ name, email, password })
+        });
+        token = data.token;
+        currentUser = data.user;
+        localStorage.setItem('token', token);
+        initApp();
+        toast('Sikeres regisztráció!', 'success');
+    } catch (e) {}
+}
+
+function logout() {
+    token = null;
+    currentUser = null;
+    localStorage.removeItem('token');
+    socket?.disconnect();
+    openChats.clear();
+    document.getElementById('chatWindowsContainer').innerHTML = '';
+    document.getElementById('authPage').classList.remove('hidden');
+    document.getElementById('mainApp').classList.add('hidden');
+    toast('Kijelentkeztél', 'info');
+}
+
+// ============ APP INIT ============
+async function initApp() {
     document.getElementById('authPage').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
     
+    // Socket
     socket = io();
     socket.emit('join', currentUser._id);
+    
+    socket.on('newMessage', (msg) => {
+        const odorId = msg.from._id === currentUser._id ? msg.to._id : msg.from._id;
+        // Update floating chat if open
+        if (openChats.has(odorId)) {
+            loadChatMessages(odorId);
+        } else if (msg.from._id !== currentUser._id) {
+            // Open new chat window for incoming message
+            openChatWindow(msg.from._id);
+        }
+        // Update messenger if open
+        if (currentMessengerChat === odorId) {
+            loadMessengerMessages(odorId);
+        }
+        loadMessengerChatList();
+        updateBadges();
+    });
+    
+    socket.on('typing', (userId) => {
+        showTyping(userId);
+    });
+    
+    socket.on('stopTyping', (userId) => {
+        hideTyping(userId);
+    });
     
     socket.on('newPost', () => loadPosts());
     socket.on('updatePost', () => loadPosts());
     socket.on('deletePost', () => loadPosts());
-    socket.on('newMessage', (msg) => {
-        const odorUserId = msg.from._id === currentUser._id ? msg.to._id : msg.from._id;
-        if (openChatWindows.has(odorUserId)) {
-            loadChatWindowMessages(odorUserId);
-        }
-        loadChatList();
-        updateBadges();
-    });
     socket.on('notification', () => updateBadges());
-    socket.on('friendRequest', () => showFriendTab('requests'));
-    socket.on('typing', (userId) => showTypingInWindow(userId));
-    socket.on('stopTyping', (userId) => hideTypingInWindow(userId));
     socket.on('incomingCall', (data) => handleIncomingCall(data));
     socket.on('callEnded', () => endCall());
     
-    updateUI();
-    showSection('feed');
+    // Load users
+    allUsers = await api('/users');
+    
+    // Update UI
+    updateUserUI();
+    navigate('feed');
     updateBadges();
 }
 
-function updateUI() {
-    const avatar = currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=6366f1&color=fff&size=200`;
+function updateUserUI() {
+    const avatar = getAvatar(currentUser);
     document.getElementById('navAvatar').src = avatar;
     document.getElementById('menuAvatar').src = avatar;
-    document.getElementById('postAvatar').src = avatar;
-    document.getElementById('modalAvatar').src = avatar;
-    document.getElementById('storyAvatar').src = avatar;
+    document.getElementById('feedAvatar').src = avatar;
+    document.getElementById('postModalAvatar').src = avatar;
     document.getElementById('menuName').textContent = currentUser.name;
-    document.getElementById('modalName').textContent = currentUser.name;
+    document.getElementById('postModalName').textContent = currentUser.name;
     
     if (currentUser.isAdmin) {
-        document.getElementById('adminPanel').classList.remove('hidden');
+        document.getElementById('adminMenuItem').classList.remove('hidden');
     }
 }
 
@@ -821,7 +903,6 @@ async function updateBadges() {
         if (data.notifications > 0) {
             notifBadge.textContent = data.notifications;
             notifBadge.classList.remove('hidden');
-            notifBadge.classList.add('flex');
         } else {
             notifBadge.classList.add('hidden');
         }
@@ -829,151 +910,590 @@ async function updateBadges() {
         if (data.messages > 0) {
             msgBadge.textContent = data.messages;
             msgBadge.classList.remove('hidden');
-            msgBadge.classList.add('flex');
         } else {
             msgBadge.classList.add('hidden');
         }
-    } catch (error) {}
+    } catch (e) {}
 }
 
-function showSection(section) {
-    const sections = ['feed', 'messenger', 'friends', 'profile', 'notifications', 'admin'];
-    sections.forEach(s => document.getElementById(s + 'Section').classList.add('hidden'));
-    document.getElementById(section + 'Section').classList.remove('hidden');
-    document.getElementById('profileMenu').classList.add('hidden');
+// ============ NAVIGATION ============
+function navigate(page, param = null) {
+    // Hide all pages
+    document.querySelectorAll('[id$="Page"]').forEach(p => p.classList.add('hidden'));
     
-    if (section === 'feed') { loadPosts(); loadStories(); }
-    if (section === 'messenger') loadChatList();
-    if (section === 'friends') showFriendTab('all');
-    if (section === 'profile') loadProfile(currentUser._id);
-    if (section === 'notifications') loadNotifications();
-    if (section === 'admin') loadAdminPanel();
+    // Update nav
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
+    const navBtn = document.getElementById(`nav${page.charAt(0).toUpperCase() + page.slice(1)}`);
+    if (navBtn) navBtn.classList.add('nav-active');
+    
+    // Show page
+    document.getElementById(page + 'Page')?.classList.remove('hidden');
+    
+    // Close menus
+    document.getElementById('userMenu').classList.add('hidden');
+    document.getElementById('searchDropdown').classList.add('hidden');
+    
+    // Load content
+    switch(page) {
+        case 'feed': loadFeed(); break;
+        case 'messenger': loadMessenger(); break;
+        case 'friends': loadFriends(); break;
+        case 'profile': loadProfile(param || currentUser._id); break;
+        case 'notifications': loadNotifications(); break;
+        case 'admin': loadAdmin(); break;
+    }
 }
 
-function toggleProfileMenu() {
-    document.getElementById('profileMenu').classList.toggle('hidden');
+// ============ SEARCH ============
+function handleSearch(query) {
+    const dropdown = document.getElementById('searchDropdown');
+    const results = document.getElementById('searchResults');
+    
+    if (!query.trim()) {
+        dropdown.classList.add('hidden');
+        return;
+    }
+    
+    const filtered = allUsers.filter(u => 
+        u.name.toLowerCase().includes(query.toLowerCase()) ||
+        u.email.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    if (filtered.length === 0) {
+        results.innerHTML = '<p class="text-gray-500 text-center py-4">Nincs találat</p>';
+    } else {
+        results.innerHTML = filtered.map(u => `
+            <div onclick="navigate('profile', '${u._id}')" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
+                <img src="${getAvatar(u)}" class="w-10 h-10 rounded-full">
+                <div>
+                    <p class="font-semibold text-gray-800 dark:text-white text-sm">${u.name}</p>
+                    <p class="text-xs text-gray-500">${u.email}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    dropdown.classList.remove('hidden');
 }
 
+function showSearchDropdown() {
+    const query = document.getElementById('searchInput').value;
+    if (query.trim()) {
+        document.getElementById('searchDropdown').classList.remove('hidden');
+    }
+}
+
+function hideSearchDropdown() {
+    document.getElementById('searchDropdown').classList.add('hidden');
+}
+
+// ============ DARK MODE ============
 function toggleDarkMode() {
     document.documentElement.classList.toggle('dark');
     const isDark = document.documentElement.classList.contains('dark');
     localStorage.setItem('darkMode', isDark);
-    document.getElementById('themeIcon').className = `fas fa-${isDark ? 'sun' : 'moon'} text-gray-600 dark:text-gray-400`;
+    document.getElementById('themeIcon').className = `fas fa-${isDark ? 'sun' : 'moon'} text-gray-700 dark:text-gray-300`;
 }
 
-// ============ FLOATING CHAT WINDOWS (Facebook Style) ============
+function toggleUserMenu() {
+    document.getElementById('userMenu').classList.toggle('hidden');
+}
+
+// ============ FEED ============
+async function loadFeed() {
+    await loadStories();
+    await loadPosts();
+}
+
+async function loadStories() {
+    try {
+        const stories = await api('/stories');
+        const container = document.getElementById('storiesContainer');
+        
+        container.innerHTML = `
+            <div onclick="openStoryModal()" class="flex-shrink-0 cursor-pointer group">
+                <div class="w-28 h-48 bg-gray-100 dark:bg-dark-300 rounded-xl relative overflow-hidden hover:brightness-95 transition">
+                    <img src="${getAvatar(currentUser)}" class="w-full h-3/4 object-cover">
+                    <div class="absolute bottom-0 inset-x-0 h-1/3 bg-white dark:bg-dark-200 flex flex-col items-center justify-center">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center -mt-4 ring-4 ring-white dark:ring-dark-200">
+                            <i class="fas fa-plus text-white text-sm"></i>
+                        </div>
+                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300 mt-1">Történet</span>
+                    </div>
+                </div>
+            </div>
+            ${stories.map(s => `
+                <div onclick="viewStory('${s._id}')" class="flex-shrink-0 cursor-pointer group">
+                    <div class="story-ring rounded-xl">
+                        <div class="w-28 h-48 rounded-xl relative overflow-hidden bg-gray-900">
+                            <img src="${s.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                            <img src="${getAvatar(s.author)}" class="absolute top-2 left-2 w-8 h-8 rounded-full ring-2 ring-blue-500">
+                            <p class="absolute bottom-2 left-2 right-2 text-white text-xs font-medium truncate">${s.author.name}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        `;
+    } catch (e) {}
+}
+
+async function loadPosts() {
+    try {
+        const posts = await api('/posts');
+        renderPosts(posts, 'postsContainer');
+    } catch (e) {}
+}
+
+function renderPosts(posts, containerId) {
+    const container = document.getElementById(containerId);
+    if (!posts.length) {
+        container.innerHTML = '<div class="text-center py-12 text-gray-500">Még nincs bejegyzés</div>';
+        return;
+    }
+    
+    container.innerHTML = posts.map(post => {
+        const liked = post.likes.includes(currentUser._id);
+        const canDelete = post.author._id === currentUser._id || currentUser.isAdmin;
+        
+        return `
+            <div class="bg-white dark:bg-dark-200 rounded-xl shadow slide-up">
+                <div class="p-4">
+                    <div class="flex items-center gap-3">
+                        <img src="${getAvatar(post.author)}" class="w-10 h-10 rounded-full cursor-pointer hover:brightness-95 transition" onclick="navigate('profile', '${post.author._id}')">
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800 dark:text-white text-sm cursor-pointer hover:underline" onclick="navigate('profile', '${post.author._id}')">${post.author.name}</p>
+                            <p class="text-xs text-gray-500">${timeAgo(post.createdAt)} · <i class="fas fa-globe-americas"></i></p>
+                        </div>
+                        ${canDelete ? `
+                            <button onclick="deletePost('${post._id}')" class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center transition">
+                                <i class="fas fa-trash text-gray-400 hover:text-red-500 text-sm"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                    ${post.content ? `<p class="mt-3 text-gray-800 dark:text-white whitespace-pre-line">${post.content}</p>` : ''}
+                </div>
+                ${post.image ? `<img src="${post.image}" class="w-full max-h-[500px] object-cover">` : ''}
+                <div class="px-4 py-2 flex items-center justify-between text-sm text-gray-500 border-b border-gray-100 dark:border-dark-300">
+                    <div class="flex items-center gap-1">
+                        ${post.likes.length > 0 ? `
+                            <div class="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-thumbs-up text-white text-xs"></i>
+                            </div>
+                            <span>${post.likes.length}</span>
+                        ` : ''}
+                    </div>
+                    <span>${post.comments.length} hozzászólás</span>
+                </div>
+                <div class="px-2 py-1 flex border-b border-gray-100 dark:border-dark-300">
+                    <button onclick="likePost('${post._id}')" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition ${liked ? 'text-blue-500' : 'text-gray-500'}">
+                        <i class="${liked ? 'fas' : 'far'} fa-thumbs-up"></i>
+                        <span class="font-medium text-sm">Tetszik</span>
+                    </button>
+                    <button onclick="document.getElementById('comment-${post._id}').focus()" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-500">
+                        <i class="far fa-comment"></i>
+                        <span class="font-medium text-sm">Hozzászólás</span>
+                    </button>
+                    <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-500">
+                        <i class="fas fa-share"></i>
+                        <span class="font-medium text-sm">Megosztás</span>
+                    </button>
+                </div>
+                <div class="p-4">
+                    ${post.comments.slice(-3).map(c => `
+                        <div class="flex gap-2 mb-2">
+                            <img src="${getAvatar(c.author)}" class="w-8 h-8 rounded-full">
+                            <div class="bg-gray-100 dark:bg-dark-300 rounded-2xl px-3 py-2">
+                                <p class="font-semibold text-xs text-gray-800 dark:text-white">${c.author?.name || 'Ismeretlen'}</p>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">${c.text}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                    <div class="flex gap-2 mt-2">
+                        <img src="${getAvatar(currentUser)}" class="w-8 h-8 rounded-full">
+                        <input type="text" id="comment-${post._id}" placeholder="Írj hozzászólást..." 
+                            class="flex-1 bg-gray-100 dark:bg-dark-300 rounded-full px-4 py-2 text-sm outline-none text-gray-800 dark:text-white"
+                            onkeypress="if(event.key==='Enter')addComment('${post._id}', this.value)">
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function likePost(postId) {
+    try {
+        await api(`/posts/${postId}/like`, { method: 'POST' });
+    } catch (e) {}
+}
+
+async function addComment(postId, text) {
+    if (!text.trim()) return;
+    try {
+        await api(`/posts/${postId}/comment`, {
+            method: 'POST',
+            body: JSON.stringify({ text })
+        });
+    } catch (e) {}
+}
+
+async function deletePost(postId) {
+    if (!confirm('Biztosan törlöd ezt a bejegyzést?')) return;
+    try {
+        await api(`/posts/${postId}`, { method: 'DELETE' });
+        toast('Bejegyzés törölve', 'success');
+    } catch (e) {}
+}
+
+// ============ POST MODAL ============
+function openPostModal() {
+    document.getElementById('postModal').classList.remove('hidden');
+    document.getElementById('postContent').focus();
+}
+
+function closePostModal() {
+    document.getElementById('postModal').classList.add('hidden');
+    document.getElementById('postContent').value = '';
+    document.getElementById('postImagePreview').classList.add('hidden');
+    document.getElementById('postImageInput').value = '';
+}
+
+function previewPostImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('postPreviewImg').src = e.target.result;
+            document.getElementById('postImagePreview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removePostImage() {
+    document.getElementById('postImagePreview').classList.add('hidden');
+    document.getElementById('postImageInput').value = '';
+}
+
+async function createPost() {
+    const content = document.getElementById('postContent').value;
+    const imageEl = document.getElementById('postPreviewImg');
+    const hasImage = !document.getElementById('postImagePreview').classList.contains('hidden');
+    
+    if (!content && !hasImage) {
+        return toast('Írj valamit vagy adj hozzá képet!', 'error');
+    }
+    
+    try {
+        await api('/posts', {
+            method: 'POST',
+            body: JSON.stringify({ content, image: hasImage ? imageEl.src : '' })
+        });
+        closePostModal();
+        toast('Bejegyzés közzétéve!', 'success');
+    } catch (e) {}
+}
+
+// ============ STORY MODAL ============
+function openStoryModal() {
+    document.getElementById('storyModal').classList.remove('hidden');
+    document.getElementById('storyCreate').classList.remove('hidden');
+    document.getElementById('storyView').classList.add('hidden');
+}
+
+function closeStoryModal() {
+    document.getElementById('storyModal').classList.add('hidden');
+    document.getElementById('storyPreview').classList.add('hidden');
+    document.getElementById('storyUploadLabel').classList.remove('hidden');
+    document.getElementById('storyImageInput').value = '';
+    currentStory = null;
+}
+
+function previewStoryImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('storyPreviewImg').src = e.target.result;
+            document.getElementById('storyPreview').classList.remove('hidden');
+            document.getElementById('storyUploadLabel').classList.add('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removeStoryImage() {
+    document.getElementById('storyPreview').classList.add('hidden');
+    document.getElementById('storyUploadLabel').classList.remove('hidden');
+    document.getElementById('storyImageInput').value = '';
+}
+
+async function createStory() {
+    const image = document.getElementById('storyPreviewImg').src;
+    if (!image || document.getElementById('storyPreview').classList.contains('hidden')) {
+        return toast('Válassz egy képet!', 'error');
+    }
+    
+    try {
+        await api('/stories', {
+            method: 'POST',
+            body: JSON.stringify({ image })
+        });
+        closeStoryModal();
+        loadStories();
+        toast('Történet megosztva!', 'success');
+    } catch (e) {}
+}
+
+async function viewStory(storyId) {
+    try {
+        const stories = await api('/stories');
+        const story = stories.find(s => s._id === storyId);
+        if (!story) return;
+        
+        currentStory = story;
+        
+        document.getElementById('storyModal').classList.remove('hidden');
+        document.getElementById('storyCreate').classList.add('hidden');
+        document.getElementById('storyView').classList.remove('hidden');
+        
+        document.getElementById('storyViewAvatar').src = getAvatar(story.author);
+        document.getElementById('storyViewName').textContent = story.author.name;
+        document.getElementById('storyViewTime').textContent = timeAgo(story.createdAt);
+        document.getElementById('storyViewImg').src = story.image;
+        
+        const deleteBtn = document.getElementById('storyDeleteBtn');
+        if (story.author._id === currentUser._id || currentUser.isAdmin) {
+            deleteBtn.classList.remove('hidden');
+        } else {
+            deleteBtn.classList.add('hidden');
+        }
+    } catch (e) {}
+}
+
+async function deleteStory() {
+    if (!currentStory) return;
+    if (!confirm('Biztosan törlöd ezt a történetet?')) return;
+    
+    try {
+        await api(`/stories/${currentStory._id}`, { method: 'DELETE' });
+        closeStoryModal();
+        loadStories();
+        toast('Történet törölve!', 'success');
+    } catch (e) {}
+}
+
+// ============ MESSENGER PAGE ============
+async function loadMessenger() {
+    await loadMessengerChatList();
+}
+
+async function loadMessengerChatList() {
+    try {
+        const convs = await api('/messages/conversations');
+        const container = document.getElementById('messengerChatList');
+        
+        // Combine with all users who don't have conversations yet
+        const convUserIds = convs.map(c => c.user._id);
+        const odorUsers = allUsers.filter(u => !convUserIds.includes(u._id));
+        
+        const allChats = [
+            ...convs.map(c => ({ user: c.user, lastMessage: c.lastMessage, unread: c.unread })),
+            ...odorUsers.map(u => ({ user: u, lastMessage: null, unread: 0 }))
+        ];
+        
+        container.innerHTML = allChats.map(c => `
+            <div onclick="openMessengerChat('${c.user._id}')" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition ${currentMessengerChat === c.user._id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}">
+                <div class="relative">
+                    <img src="${getAvatar(c.user)}" class="w-12 h-12 rounded-full">
+                    <span class="absolute bottom-0 right-0 w-3 h-3 ${c.user.isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white dark:border-dark-200 rounded-full"></span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-gray-800 dark:text-white text-sm">${c.user.name}</p>
+                    <p class="text-xs text-gray-500 truncate">${c.lastMessage?.text || 'Kezdj el beszélgetni'}</p>
+                </div>
+                ${c.unread > 0 ? `<span class="bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">${c.unread}</span>` : ''}
+            </div>
+        `).join('');
+    } catch (e) {}
+}
+
+function filterChatList(query) {
+    const items = document.querySelectorAll('#messengerChatList > div');
+    items.forEach(item => {
+        const name = item.querySelector('.font-semibold').textContent.toLowerCase();
+        item.style.display = name.includes(query.toLowerCase()) ? '' : 'none';
+    });
+}
+
+async function openMessengerChat(userId) {
+    currentMessengerChat = userId;
+    const user = allUsers.find(u => u._id === userId);
+    if (!user) return;
+    
+    document.getElementById('messengerWelcome').classList.add('hidden');
+    document.getElementById('messengerActiveChat').classList.remove('hidden');
+    
+    // Header
+    document.getElementById('messengerChatHeader').innerHTML = `
+        <div class="flex items-center gap-3">
+            <div class="relative">
+                <img src="${getAvatar(user)}" class="w-10 h-10 rounded-full cursor-pointer" onclick="navigate('profile', '${user._id}')">
+                <span class="absolute bottom-0 right-0 w-2.5 h-2.5 ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white dark:border-dark-200 rounded-full"></span>
+            </div>
+            <div>
+                <p class="font-semibold text-gray-800 dark:text-white cursor-pointer hover:underline" onclick="navigate('profile', '${user._id}')">${user.name}</p>
+                <p class="text-xs ${user.isOnline ? 'text-green-500' : 'text-gray-500'}">${user.isOnline ? 'Aktív most' : 'Offline'}</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-1">
+            <button onclick="startCall('${user._id}', 'audio')" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500 transition" title="Hanghívás">
+                <i class="fas fa-phone"></i>
+            </button>
+            <button onclick="startCall('${user._id}', 'video')" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500 transition" title="Videóhívás">
+                <i class="fas fa-video"></i>
+            </button>
+            <button onclick="openChatWindow('${user._id}')" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500 transition" title="Külön ablakban">
+                <i class="fas fa-external-link-alt"></i>
+            </button>
+        </div>
+    `;
+    
+    await loadMessengerMessages(userId);
+    loadMessengerChatList();
+}
+
+async function loadMessengerMessages(userId) {
+    try {
+        const messages = await api(`/messages/${userId}`);
+        const container = document.getElementById('messengerMessages');
+        
+        container.innerHTML = messages.map(m => `
+            <div class="flex ${m.from === currentUser._id ? 'justify-end' : 'justify-start'}">
+                <div class="${m.from === currentUser._id 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-4 py-2 max-w-xs lg:max-w-md">
+                    ${m.text}
+                </div>
+            </div>
+        `).join('');
+        
+        container.scrollTop = container.scrollHeight;
+    } catch (e) {}
+}
+
+let messengerTypingTimeout;
+function handleMessengerTyping() {
+    if (currentMessengerChat) {
+        socket.emit('typing', { to: currentMessengerChat, from: currentUser._id });
+        clearTimeout(messengerTypingTimeout);
+        messengerTypingTimeout = setTimeout(() => {
+            socket.emit('stopTyping', { to: currentMessengerChat, from: currentUser._id });
+        }, 1000);
+    }
+}
+
+async function sendMessengerMessage() {
+    const input = document.getElementById('messengerInput');
+    const text = input.value.trim();
+    if (!text || !currentMessengerChat) return;
+    
+    try {
+        await api('/messages', {
+            method: 'POST',
+            body: JSON.stringify({ to: currentMessengerChat, text })
+        });
+        input.value = '';
+        socket.emit('stopTyping', { to: currentMessengerChat, from: currentUser._id });
+    } catch (e) {}
+}
+
+// ============ FLOATING CHAT WINDOWS ============
 async function openChatWindow(userId) {
-    if (openChatWindows.has(userId)) {
-        // Maximize if minimized
-        const existing = openChatWindows.get(userId);
+    if (openChats.has(userId)) {
+        const existing = openChats.get(userId);
         existing.classList.remove('minimized');
         return;
     }
     
-    if (openChatWindows.size >= 3) {
-        // Close oldest window
-        const firstKey = openChatWindows.keys().next().value;
+    if (openChats.size >= 3) {
+        const firstKey = openChats.keys().next().value;
         closeChatWindow(firstKey);
     }
     
-    try {
-        const user = await api(`/users/${userId}`);
-        
-        const window = document.createElement('div');
-        window.className = 'chat-window bg-white dark:bg-dark-200 slide-up';
-        window.id = `chat-window-${userId}`;
-        window.innerHTML = `
-            <div class="chat-header flex items-center justify-between p-2 bg-white dark:bg-dark-200 border-b border-gray-200 dark:border-dark-300 cursor-pointer" onclick="toggleChatWindow('${userId}')">
-                <div class="flex items-center gap-2">
-                    <div class="relative">
-                        <img src="${user.avatar}" class="w-8 h-8 rounded-full">
-                        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white dark:border-dark-200 rounded-full"></span>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-gray-800 dark:text-white text-sm">${user.name}</p>
-                        <p class="text-xs ${user.isOnline ? 'text-green-500' : 'text-gray-400'}">${user.isOnline ? 'Aktív' : 'Offline'}</p>
-                    </div>
+    const user = allUsers.find(u => u._id === userId);
+    if (!user) return;
+    
+    const win = document.createElement('div');
+    win.className = 'chat-window bg-white dark:bg-dark-200 slide-up';
+    win.id = `chat-${userId}`;
+    win.innerHTML = `
+        <div class="chat-header h-11 flex items-center justify-between px-2 bg-white dark:bg-dark-200 border-b border-gray-200 dark:border-dark-300 cursor-pointer" onclick="toggleChatWindow('${userId}')">
+            <div class="flex items-center gap-2">
+                <div class="relative">
+                    <img src="${getAvatar(user)}" class="w-8 h-8 rounded-full">
+                    <span class="absolute bottom-0 right-0 w-2 h-2 ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'} border border-white dark:border-dark-200 rounded-full"></span>
                 </div>
-                <div class="flex items-center gap-1">
-                    <button onclick="event.stopPropagation(); startCall('${userId}', 'audio')" class="w-7 h-7 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-primary-500 transition" title="Hanghívás">
-                        <i class="fas fa-phone text-sm"></i>
-                    </button>
-                    <button onclick="event.stopPropagation(); startCall('${userId}', 'video')" class="w-7 h-7 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-primary-500 transition" title="Videóhívás">
-                        <i class="fas fa-video text-sm"></i>
-                    </button>
-                    <button onclick="event.stopPropagation(); minimizeChatWindow('${userId}')" class="w-7 h-7 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-gray-500 transition" title="Kis méret">
-                        <i class="fas fa-minus text-sm"></i>
-                    </button>
-                    <button onclick="event.stopPropagation(); closeChatWindow('${userId}')" class="w-7 h-7 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-gray-500 transition" title="Bezárás">
-                        <i class="fas fa-times text-sm"></i>
-                    </button>
-                </div>
+                <span class="font-semibold text-gray-800 dark:text-white text-sm">${user.name}</span>
             </div>
-            <div class="chat-body flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin bg-white dark:bg-dark-100" id="chat-messages-${userId}"></div>
-            <div id="typing-${userId}" class="hidden px-3 py-1">
-                <div class="flex items-center gap-2 text-gray-400 text-xs">
-                    <div class="flex gap-0.5">
-                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full typing-dot"></span>
-                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full typing-dot"></span>
-                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full typing-dot"></span>
-                    </div>
-                </div>
-            </div>
-            <div class="chat-input p-2 border-t border-gray-200 dark:border-dark-300 bg-white dark:bg-dark-200 flex items-center gap-2">
-                <button class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-primary-500 transition">
-                    <i class="fas fa-plus-circle"></i>
+            <div class="flex items-center">
+                <button onclick="event.stopPropagation(); startCall('${userId}', 'audio')" class="w-7 h-7 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500" title="Hanghívás">
+                    <i class="fas fa-phone text-sm"></i>
                 </button>
-                <button class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-primary-500 transition">
-                    <i class="fas fa-image"></i>
+                <button onclick="event.stopPropagation(); startCall('${userId}', 'video')" class="w-7 h-7 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500" title="Videóhívás">
+                    <i class="fas fa-video text-sm"></i>
                 </button>
-                <button class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-primary-500 transition">
-                    <i class="fas fa-gift"></i>
+                <button onclick="event.stopPropagation(); toggleChatWindow('${userId}')" class="w-7 h-7 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-gray-500">
+                    <i class="fas fa-minus text-sm"></i>
                 </button>
-                <div class="flex-1 relative">
-                    <input type="text" id="msg-input-${userId}" placeholder="Aa" 
-                        class="w-full bg-gray-100 dark:bg-dark-300 rounded-full px-4 py-2 text-sm text-gray-800 dark:text-white pr-10"
-                        oninput="handleTypingWindow('${userId}')"
-                        onkeypress="if(event.key==='Enter')sendMessageWindow('${userId}')">
-                    <button class="absolute right-2 top-1/2 -translate-y-1/2 text-primary-500">
-                        <i class="fas fa-smile"></i>
-                    </button>
-                </div>
-                <button onclick="sendMessageWindow('${userId}')" class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-primary-500 transition">
-                    <i class="fas fa-thumbs-up"></i>
+                <button onclick="event.stopPropagation(); closeChatWindow('${userId}')" class="w-7 h-7 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-gray-500">
+                    <i class="fas fa-times text-sm"></i>
                 </button>
             </div>
-        `;
-        
-        document.getElementById('chatWindowsContainer').appendChild(window);
-        openChatWindows.set(userId, window);
-        loadChatWindowMessages(userId);
-        
-    } catch (error) {}
+        </div>
+        <div class="chat-body flex-1 overflow-y-auto p-3 space-y-2 bg-white dark:bg-dark-100" id="chat-messages-${userId}"></div>
+        <div id="chat-typing-${userId}" class="hidden px-3 py-1">
+            <div class="flex items-center gap-2 text-gray-500 text-xs">
+                <div class="flex gap-1">
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                </div>
+            </div>
+        </div>
+        <div class="chat-footer p-2 border-t border-gray-200 dark:border-dark-300 bg-white dark:bg-dark-200 flex items-center gap-1">
+            <button class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500">
+                <i class="fas fa-plus-circle"></i>
+            </button>
+            <div class="flex-1">
+                <input type="text" id="chat-input-${userId}" placeholder="Aa" 
+                    class="w-full bg-gray-100 dark:bg-dark-300 rounded-full px-3 py-1.5 text-sm outline-none text-gray-800 dark:text-white"
+                    oninput="handleChatTyping('${userId}')"
+                    onkeypress="if(event.key==='Enter')sendChatMessage('${userId}')">
+            </div>
+            <button onclick="sendChatMessage('${userId}')" class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    `;
+    
+    document.getElementById('chatWindowsContainer').appendChild(win);
+    openChats.set(userId, win);
+    await loadChatMessages(userId);
 }
 
 function toggleChatWindow(userId) {
-    const window = openChatWindows.get(userId);
-    if (window) {
-        window.classList.toggle('minimized');
-    }
-}
-
-function minimizeChatWindow(userId) {
-    const window = openChatWindows.get(userId);
-    if (window) {
-        window.classList.add('minimized');
-    }
+    const win = openChats.get(userId);
+    if (win) win.classList.toggle('minimized');
 }
 
 function closeChatWindow(userId) {
-    const window = openChatWindows.get(userId);
-    if (window) {
-        window.remove();
-        openChatWindows.delete(userId);
+    const win = openChats.get(userId);
+    if (win) {
+        win.remove();
+        openChats.delete(userId);
     }
 }
 
-async function loadChatWindowMessages(userId) {
+async function loadChatMessages(userId) {
     try {
         const messages = await api(`/messages/${userId}`);
         const container = document.getElementById(`chat-messages-${userId}`);
@@ -982,38 +1502,28 @@ async function loadChatWindowMessages(userId) {
         container.innerHTML = messages.map(m => `
             <div class="flex ${m.from === currentUser._id ? 'justify-end' : 'justify-start'}">
                 <div class="${m.from === currentUser._id 
-                    ? 'bg-primary-500 text-white' 
-                    : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-3 py-2 max-w-[200px] text-sm">
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-3 py-1.5 max-w-[200px] text-sm">
                     ${m.text}
                 </div>
             </div>
         `).join('');
         
         container.scrollTop = container.scrollHeight;
-    } catch (error) {}
+    } catch (e) {}
 }
 
-let typingTimeouts = {};
-function handleTypingWindow(userId) {
+let chatTypingTimeouts = {};
+function handleChatTyping(userId) {
     socket.emit('typing', { to: userId, from: currentUser._id });
-    clearTimeout(typingTimeouts[userId]);
-    typingTimeouts[userId] = setTimeout(() => {
+    clearTimeout(chatTypingTimeouts[userId]);
+    chatTypingTimeouts[userId] = setTimeout(() => {
         socket.emit('stopTyping', { to: userId, from: currentUser._id });
     }, 1000);
 }
 
-function showTypingInWindow(userId) {
-    const typing = document.getElementById(`typing-${userId}`);
-    if (typing) typing.classList.remove('hidden');
-}
-
-function hideTypingInWindow(userId) {
-    const typing = document.getElementById(`typing-${userId}`);
-    if (typing) typing.classList.add('hidden');
-}
-
-async function sendMessageWindow(userId) {
-    const input = document.getElementById(`msg-input-${userId}`);
+async function sendChatMessage(userId) {
+    const input = document.getElementById(`chat-input-${userId}`);
     const text = input.value.trim();
     if (!text) return;
     
@@ -1024,36 +1534,55 @@ async function sendMessageWindow(userId) {
         });
         input.value = '';
         socket.emit('stopTyping', { to: userId, from: currentUser._id });
-    } catch (error) {}
+    } catch (e) {}
 }
 
-// ============ CALL FUNCTIONS ============
+function showTyping(userId) {
+    // In floating chat
+    const chatTyping = document.getElementById(`chat-typing-${userId}`);
+    if (chatTyping) chatTyping.classList.remove('hidden');
+    
+    // In messenger
+    if (currentMessengerChat === userId) {
+        document.getElementById('messengerTyping').classList.remove('hidden');
+    }
+}
+
+function hideTyping(userId) {
+    const chatTyping = document.getElementById(`chat-typing-${userId}`);
+    if (chatTyping) chatTyping.classList.add('hidden');
+    
+    if (currentMessengerChat === userId) {
+        document.getElementById('messengerTyping').classList.add('hidden');
+    }
+}
+
+// ============ CALLS ============
 async function startCall(userId, type) {
-    try {
-        const user = await api(`/users/${userId}`);
-        callState = { active: true, type, userId, muted: false, videoOff: false };
-        
-        document.getElementById('callAvatar').src = user.avatar;
-        document.getElementById('callName').textContent = user.name;
-        document.getElementById('callStatus').textContent = type === 'video' ? 'Videóhívás...' : 'Hanghívás...';
-        document.getElementById('callModal').classList.remove('hidden');
-        document.getElementById('acceptCallBtn').classList.add('hidden');
-        document.getElementById('callControls').classList.add('hidden');
-        
-        socket.emit('startCall', { to: userId, from: currentUser._id, type });
-        
-        // Simulate call connecting after 2s
-        setTimeout(() => {
-            if (callState.active) {
-                document.getElementById('callStatus').textContent = 'Kapcsolódva';
-                document.getElementById('callControls').classList.remove('hidden');
-            }
-        }, 2000);
-    } catch (error) {}
+    const user = allUsers.find(u => u._id === userId);
+    if (!user) return;
+    
+    callState = { active: true, muted: false, videoOff: false, userId };
+    
+    document.getElementById('callAvatar').src = getAvatar(user);
+    document.getElementById('callName').textContent = user.name;
+    document.getElementById('callStatus').textContent = type === 'video' ? 'Videóhívás...' : 'Hanghívás...';
+    document.getElementById('callModal').classList.remove('hidden');
+    document.getElementById('acceptCallBtn').classList.add('hidden');
+    document.getElementById('callControls').classList.add('hidden');
+    
+    socket.emit('startCall', { to: userId, from: currentUser._id, type });
+    
+    setTimeout(() => {
+        if (callState.active) {
+            document.getElementById('callStatus').textContent = 'Kapcsolódva';
+            document.getElementById('callControls').classList.remove('hidden');
+        }
+    }, 2000);
 }
 
 function handleIncomingCall(data) {
-    callState = { active: true, type: data.type, userId: data.from, muted: false, videoOff: false };
+    callState = { active: true, muted: false, videoOff: false, userId: data.from };
     
     document.getElementById('callAvatar').src = data.avatar;
     document.getElementById('callName').textContent = data.name;
@@ -1072,334 +1601,38 @@ function acceptCall() {
 
 function endCall() {
     document.getElementById('callModal').classList.add('hidden');
-    if (callState.active) {
+    if (callState.active && callState.userId) {
         socket.emit('endCall', { to: callState.userId });
     }
-    callState = { active: false, type: null, userId: null, muted: false, videoOff: false };
+    callState = { active: false, muted: false, videoOff: false, userId: null };
 }
 
 function toggleMute() {
     callState.muted = !callState.muted;
     const btn = document.getElementById('muteBtn');
-    btn.innerHTML = callState.muted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
+    btn.innerHTML = `<i class="fas fa-microphone${callState.muted ? '-slash' : ''}"></i>`;
     btn.classList.toggle('bg-red-500/50', callState.muted);
 }
 
 function toggleVideo() {
     callState.videoOff = !callState.videoOff;
     const btn = document.getElementById('videoBtn');
-    btn.innerHTML = callState.videoOff ? '<i class="fas fa-video-slash"></i>' : '<i class="fas fa-video"></i>';
+    btn.innerHTML = `<i class="fas fa-video${callState.videoOff ? '-slash' : ''}"></i>`;
     btn.classList.toggle('bg-red-500/50', callState.videoOff);
 }
 
-// ============ POSTS ============
-function openPostModal() {
-    document.getElementById('postModal').classList.remove('hidden');
-    document.getElementById('postContent').focus();
-}
-
-function closePostModal() {
-    document.getElementById('postModal').classList.add('hidden');
-    document.getElementById('postContent').value = '';
-    document.getElementById('imagePreview').classList.add('hidden');
-    document.getElementById('postImage').value = '';
-}
-
-function previewImage(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            document.getElementById('previewImg').src = e.target.result;
-            document.getElementById('imagePreview').classList.remove('hidden');
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-function removeImage() {
-    document.getElementById('imagePreview').classList.add('hidden');
-    document.getElementById('postImage').value = '';
-}
-
-async function createPost() {
-    const content = document.getElementById('postContent').value;
-    const image = document.getElementById('previewImg').src;
-    const hasImage = !document.getElementById('imagePreview').classList.contains('hidden');
-    
-    if (!content && !hasImage) {
-        showToast('Írj valamit vagy adj hozzá képet!', 'error');
-        return;
-    }
-    
-    try {
-        await api('/posts', {
-            method: 'POST',
-            body: JSON.stringify({ content, image: hasImage ? image : '' })
-        });
-        closePostModal();
-        showToast('Bejegyzés közzétéve!', 'success');
-    } catch (error) {}
-}
-
-async function loadPosts() {
-    try {
-        const posts = await api('/posts');
-        renderPosts(posts, 'postsContainer');
-    } catch (error) {}
-}
-
-function renderPosts(posts, containerId) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = posts.map(post => {
-        const isLiked = post.likes.includes(currentUser._id);
-        return `
-            <div class="bg-white dark:bg-dark-200 rounded-xl overflow-hidden shadow-sm border border-gray-200 dark:border-dark-300 slide-in">
-                <div class="p-4">
-                    <div class="flex items-center gap-3">
-                        <img src="${post.author.avatar}" class="w-10 h-10 rounded-full cursor-pointer hover:brightness-95 transition" onclick="loadProfile('${post.author._id}')">
-                        <div class="flex-1">
-                            <p class="font-semibold text-gray-800 dark:text-white text-sm cursor-pointer hover:underline" onclick="loadProfile('${post.author._id}')">${post.author.name}</p>
-                            <p class="text-xs text-gray-500">${getTimeAgo(post.createdAt)} · <i class="fas fa-globe-americas"></i></p>
-                        </div>
-                        ${post.author._id === currentUser._id || currentUser.isAdmin ? `
-                            <button onclick="deletePost('${post._id}')" class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center transition group">
-                                <i class="fas fa-ellipsis-h text-gray-400 group-hover:text-gray-600"></i>
-                            </button>
-                        ` : ''}
-                    </div>
-                    <p class="mt-3 text-gray-800 dark:text-gray-200 text-sm whitespace-pre-line">${post.content}</p>
-                </div>
-                ${post.image ? `<img src="${post.image}" class="w-full max-h-[500px] object-cover cursor-pointer" onclick="window.open('${post.image}')">` : ''}
-                <div class="px-4 py-2 flex items-center justify-between text-xs text-gray-500 border-b border-gray-100 dark:border-dark-300">
-                    <div class="flex items-center gap-1">
-                        ${post.likes.length > 0 ? `<div class="w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center"><i class="fas fa-thumbs-up text-white" style="font-size: 8px;"></i></div><span>${post.likes.length}</span>` : ''}
-                    </div>
-                    <span>${post.comments.length} hozzászólás</span>
-                </div>
-                <div class="px-2 py-1 flex border-b border-gray-100 dark:border-dark-300">
-                    <button onclick="toggleLike('${post._id}')" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-dark-300 transition ${isLiked ? 'text-primary-500' : 'text-gray-500'}">
-                        <i class="${isLiked ? 'fas' : 'far'} fa-thumbs-up"></i>
-                        <span class="font-medium text-sm">Tetszik</span>
-                    </button>
-                    <button onclick="focusComment('${post._id}')" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-500">
-                        <i class="far fa-comment"></i>
-                        <span class="font-medium text-sm">Hozzászólás</span>
-                    </button>
-                    <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-500">
-                        <i class="fas fa-share"></i>
-                        <span class="font-medium text-sm">Megosztás</span>
-                    </button>
-                </div>
-                <div class="p-4">
-                    <div id="comments-${post._id}" class="space-y-3 mb-3">
-                        ${post.comments.slice(-2).map(c => `
-                            <div class="flex gap-2">
-                                <img src="${c.author?.avatar || ''}" class="w-8 h-8 rounded-full">
-                                <div class="bg-gray-100 dark:bg-dark-300 rounded-2xl px-3 py-2">
-                                    <p class="font-semibold text-xs text-gray-800 dark:text-white">${c.author?.name || 'Ismeretlen'}</p>
-                                    <p class="text-sm text-gray-700 dark:text-gray-300">${c.text}</p>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="flex gap-2">
-                        <img src="${currentUser.avatar}" class="w-8 h-8 rounded-full">
-                        <div class="flex-1 relative">
-                            <input type="text" id="comment-input-${post._id}" placeholder="Írj hozzászólást..." 
-                                class="w-full bg-gray-100 dark:bg-dark-300 rounded-full px-4 py-2 text-sm text-gray-800 dark:text-white pr-20"
-                                onkeypress="if(event.key==='Enter')addComment('${post._id}')">
-                            <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 text-gray-400">
-                                <button class="hover:text-gray-600"><i class="far fa-smile"></i></button>
-                                <button class="hover:text-gray-600"><i class="fas fa-camera"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('') || '<p class="text-gray-500 text-center py-12">Még nincs bejegyzés</p>';
-}
-
-async function toggleLike(postId) {
-    try {
-        await api(`/posts/${postId}/like`, { method: 'POST' });
-    } catch (error) {}
-}
-
-function focusComment(postId) {
-    document.getElementById(`comment-input-${postId}`).focus();
-}
-
-async function addComment(postId) {
-    const input = document.getElementById(`comment-input-${postId}`);
-    const text = input.value.trim();
-    if (!text) return;
-    
-    try {
-        await api(`/posts/${postId}/comment`, {
-            method: 'POST',
-            body: JSON.stringify({ text })
-        });
-        input.value = '';
-    } catch (error) {}
-}
-
-async function deletePost(postId) {
-    if (!confirm('Biztosan törlöd ezt a bejegyzést?')) return;
-    try {
-        await api(`/posts/${postId}`, { method: 'DELETE' });
-        showToast('Bejegyzés törölve!', 'success');
-    } catch (error) {}
-}
-
-// ============ STORIES ============
-async function loadStories() {
-    try {
-        const stories = await api('/stories');
-        const container = document.getElementById('storiesContainer');
-        const createStory = container.firstElementChild.outerHTML;
-        
-        container.innerHTML = createStory + stories.map(story => `
-            <div onclick="viewStory('${story._id}')" class="flex-shrink-0 cursor-pointer group">
-                <div class="story-ring rounded-xl p-0.5">
-                    <div class="w-28 h-48 rounded-xl relative overflow-hidden bg-gray-900">
-                        <img src="${story.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                        <img src="${story.author.avatar}" class="absolute top-2 left-2 w-8 h-8 rounded-full ring-2 ring-primary-500">
-                        <p class="absolute bottom-2 left-2 right-2 text-white text-xs font-medium truncate">${story.author.name}</p>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    } catch (error) {}
-}
-
-function openStoryModal() {
-    document.getElementById('storyModal').classList.remove('hidden');
-    document.getElementById('storyCreateView').classList.remove('hidden');
-    document.getElementById('storyViewMode').classList.add('hidden');
-}
-
-function closeStoryModal() {
-    document.getElementById('storyModal').classList.add('hidden');
-    document.getElementById('storyPreview').classList.add('hidden');
-    document.getElementById('storyUploadLabel').classList.remove('hidden');
-    document.getElementById('storyImage').value = '';
-    currentViewingStory = null;
-}
-
-function previewStory(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            document.getElementById('storyPreviewImg').src = e.target.result;
-            document.getElementById('storyPreview').classList.remove('hidden');
-            document.getElementById('storyUploadLabel').classList.add('hidden');
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-function removeStoryPreview() {
-    document.getElementById('storyPreview').classList.add('hidden');
-    document.getElementById('storyUploadLabel').classList.remove('hidden');
-    document.getElementById('storyImage').value = '';
-}
-
-async function createStory() {
-    const image = document.getElementById('storyPreviewImg').src;
-    if (!image || document.getElementById('storyPreview').classList.contains('hidden')) {
-        showToast('Válassz egy képet!', 'error');
-        return;
-    }
-    
-    try {
-        await api('/stories', {
-            method: 'POST',
-            body: JSON.stringify({ image })
-        });
-        closeStoryModal();
-        loadStories();
-        showToast('Történet megosztva!', 'success');
-    } catch (error) {}
-}
-
-async function viewStory(storyId) {
-    try {
-        const stories = await api('/stories');
-        const story = stories.find(s => s._id === storyId);
-        if (!story) return;
-        
-        currentViewingStory = story;
-        
-        document.getElementById('storyModal').classList.remove('hidden');
-        document.getElementById('storyCreateView').classList.add('hidden');
-        document.getElementById('storyViewMode').classList.remove('hidden');
-        
-        document.getElementById('storyViewerAvatar').src = story.author.avatar;
-        document.getElementById('storyViewerName').textContent = story.author.name;
-        document.getElementById('storyViewerTime').textContent = getTimeAgo(story.createdAt);
-        document.getElementById('storyViewerImg').src = story.image;
-        
-        // Show delete button if own story or admin
-        const deleteBtn = document.getElementById('storyDeleteBtn');
-        if (story.author._id === currentUser._id || currentUser.isAdmin) {
-            deleteBtn.classList.remove('hidden');
-        } else {
-            deleteBtn.classList.add('hidden');
-        }
-    } catch (error) {}
-}
-
-async function deleteCurrentStory() {
-    if (!currentViewingStory) return;
-    if (!confirm('Biztosan törlöd ezt a történetet?')) return;
-    
-    try {
-        await api(`/stories/${currentViewingStory._id}`, { method: 'DELETE' });
-        closeStoryModal();
-        loadStories();
-        showToast('Történet törölve!', 'success');
-    } catch (error) {}
-}
-
-// ============ MESSENGER (Full Page) ============
-async function loadChatList() {
-    try {
-        const users = await api('/users');
-        const conversations = await api('/messages/conversations');
-        
-        const chatMap = new Map();
-        conversations.forEach(c => chatMap.set(c.user._id, c));
-        
-        const container = document.getElementById('chatList');
-        container.innerHTML = users.map(user => {
-            const conv = chatMap.get(user._id);
-            return `
-                <div onclick="openChatWindow('${user._id}')" class="flex items-center gap-3 p-2 mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
-                    <div class="relative">
-                        <img src="${user.avatar}" class="w-12 h-12 rounded-full">
-                        <span class="absolute bottom-0 right-0 w-3 h-3 ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white dark:border-dark-200 rounded-full"></span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-gray-800 dark:text-white text-sm">${user.name}</p>
-                        <p class="text-xs text-gray-500 truncate">${conv?.lastMessage?.text || 'Kezdj el beszélgetni'}</p>
-                    </div>
-                    ${conv?.unread > 0 ? `<span class="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">${conv.unread}</span>` : ''}
-                </div>
-            `;
-        }).join('');
-    } catch (error) {}
-}
-
 // ============ FRIENDS ============
-async function showFriendTab(tab) {
-    document.querySelectorAll('.friend-tab').forEach(btn => {
-        btn.classList.remove('bg-primary-500', 'text-white');
+async function loadFriends() {
+    showFriendsTab('all');
+}
+
+async function showFriendsTab(tab) {
+    document.querySelectorAll('.friends-tab').forEach(btn => {
+        btn.classList.remove('bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-600');
         btn.classList.add('bg-gray-100', 'dark:bg-dark-300', 'text-gray-700', 'dark:text-gray-300');
     });
-    event?.target.classList.add('bg-primary-500', 'text-white');
     event?.target.classList.remove('bg-gray-100', 'dark:bg-dark-300', 'text-gray-700', 'dark:text-gray-300');
+    event?.target.classList.add('bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-600');
     
     const content = document.getElementById('friendsContent');
     
@@ -1407,80 +1640,79 @@ async function showFriendTab(tab) {
         if (tab === 'all') {
             const user = await api(`/users/${currentUser._id}`);
             content.innerHTML = user.friends?.length ? `
-                <div class="grid md:grid-cols-2 gap-3">
+                <div class="grid md:grid-cols-2 gap-4">
                     ${user.friends.map(f => `
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-dark-300 rounded-xl">
-                            <img src="${f.avatar}" class="w-14 h-14 rounded-xl cursor-pointer" onclick="loadProfile('${f._id}')">
+                        <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-dark-300 rounded-xl">
+                            <img src="${getAvatar(f)}" class="w-16 h-16 rounded-xl cursor-pointer" onclick="navigate('profile', '${f._id}')">
                             <div class="flex-1">
-                                <p class="font-semibold text-gray-800 dark:text-white text-sm">${f.name}</p>
+                                <p class="font-semibold text-gray-800 dark:text-white cursor-pointer hover:underline" onclick="navigate('profile', '${f._id}')">${f.name}</p>
                             </div>
-                            <button onclick="openChatWindow('${f._id}')" class="w-9 h-9 bg-gray-200 dark:bg-dark-400 rounded-full flex items-center justify-center hover:bg-primary-100 dark:hover:bg-primary-900/30 transition">
+                            <button onclick="openChatWindow('${f._id}')" class="w-10 h-10 bg-gray-200 dark:bg-dark-400 rounded-full flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-900/30 transition">
                                 <i class="fab fa-facebook-messenger text-gray-600 dark:text-gray-300"></i>
                             </button>
                         </div>
                     `).join('')}
                 </div>
-            ` : '<p class="text-gray-500 text-center py-12">Még nincsenek barátaid</p>';
+            ` : '<p class="text-center text-gray-500 py-12">Még nincsenek barátaid</p>';
         } else if (tab === 'requests') {
             const requests = await api('/friends/requests');
             content.innerHTML = requests.length ? `
-                <div class="space-y-3">
+                <div class="space-y-4">
                     ${requests.map(r => `
                         <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-dark-300 rounded-xl">
-                            <img src="${r.from.avatar}" class="w-16 h-16 rounded-xl">
+                            <img src="${getAvatar(r.from)}" class="w-16 h-16 rounded-xl">
                             <div class="flex-1">
                                 <p class="font-semibold text-gray-800 dark:text-white">${r.from.name}</p>
                             </div>
-                            <button onclick="acceptFriend('${r._id}')" class="px-4 py-2 btn-primary text-white rounded-lg font-medium text-sm">Megerősítés</button>
-                            <button onclick="declineFriend('${r._id}')" class="px-4 py-2 bg-gray-200 dark:bg-dark-400 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-sm">Törlés</button>
+                            <button onclick="acceptFriend('${r._id}')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition">Megerősítés</button>
+                            <button onclick="declineFriend('${r._id}')" class="px-4 py-2 bg-gray-200 dark:bg-dark-400 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-dark-500 transition">Törlés</button>
                         </div>
                     `).join('')}
                 </div>
-            ` : '<p class="text-gray-500 text-center py-12">Nincs függő barátkérelem</p>';
+            ` : '<p class="text-center text-gray-500 py-12">Nincs függő barátkérelem</p>';
         } else {
             const suggestions = await api('/friends/suggestions');
             content.innerHTML = suggestions.length ? `
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div class="grid md:grid-cols-3 gap-4">
                     ${suggestions.map(u => `
                         <div class="bg-gray-50 dark:bg-dark-300 rounded-xl overflow-hidden">
-                            <img src="${u.avatar}" class="w-full h-40 object-cover">
-                            <div class="p-3">
-                                <p class="font-semibold text-gray-800 dark:text-white mb-3">${u.name}</p>
-                                <button onclick="sendFriendRequest('${u._id}')" class="w-full btn-primary text-white py-2 rounded-lg font-medium text-sm">
+                            <img src="${getAvatar(u)}" class="w-full h-40 object-cover cursor-pointer" onclick="navigate('profile', '${u._id}')">
+                            <div class="p-4">
+                                <p class="font-semibold text-gray-800 dark:text-white mb-3 cursor-pointer hover:underline" onclick="navigate('profile', '${u._id}')">${u.name}</p>
+                                <button onclick="sendFriendRequest('${u._id}')" class="w-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 py-2 rounded-lg font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition">
                                     <i class="fas fa-user-plus mr-2"></i>Barátnak jelölés
                                 </button>
                             </div>
                         </div>
                     `).join('')}
                 </div>
-            ` : '<p class="text-gray-500 text-center py-12">Nincs több javaslat</p>';
+            ` : '<p class="text-center text-gray-500 py-12">Nincs több javaslat</p>';
         }
-    } catch (error) {}
+    } catch (e) {}
 }
 
 async function sendFriendRequest(userId) {
     try {
         await api(`/friends/request/${userId}`, { method: 'POST' });
-        showFriendTab('suggestions');
-        showToast('Barátkérelem elküldve!', 'success');
-    } catch (error) {}
+        toast('Barátkérelem elküldve!', 'success');
+        showFriendsTab('suggestions');
+    } catch (e) {}
 }
 
 async function acceptFriend(requestId) {
     try {
         await api(`/friends/accept/${requestId}`, { method: 'POST' });
-        const user = await api('/auth/me');
-        currentUser = user;
-        showFriendTab('requests');
-        showToast('Barátkérelem elfogadva!', 'success');
-    } catch (error) {}
+        currentUser = await api('/auth/me');
+        toast('Barátkérelem elfogadva!', 'success');
+        showFriendsTab('requests');
+    } catch (e) {}
 }
 
 async function declineFriend(requestId) {
     try {
         await api(`/friends/decline/${requestId}`, { method: 'POST' });
-        showFriendTab('requests');
-    } catch (error) {}
+        showFriendsTab('requests');
+    } catch (e) {}
 }
 
 // ============ PROFILE ============
@@ -1492,48 +1724,62 @@ async function loadProfile(userId) {
         const user = await api(`/users/${userId}`);
         const posts = await api(`/posts/user/${userId}`);
         
-        showSection('profile');
-        
-        document.getElementById('profileAvatar').src = user.avatar;
-        document.getElementById('profileCover').src = user.cover || 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1200';
+        document.getElementById('profileAvatar').src = getAvatar(user);
+        document.getElementById('profileCover').src = user.cover || '';
         document.getElementById('profileName').textContent = user.name;
         document.getElementById('profileFriendCount').textContent = `${user.friends?.length || 0} barát`;
         document.getElementById('profileBio').textContent = user.bio || '';
         
+        // Actions
+        const actions = document.getElementById('profileActions');
+        if (userId === currentUser._id) {
+            actions.innerHTML = `
+                <button onclick="showSettings()" class="px-4 py-2 bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-dark-400 transition">
+                    <i class="fas fa-pen mr-2"></i>Profil szerkesztése
+                </button>
+            `;
+        } else {
+            const isFriend = currentUser.friends?.some(f => f._id === userId || f === userId);
+            actions.innerHTML = `
+                ${!isFriend ? `
+                    <button onclick="sendFriendRequest('${userId}')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition">
+                        <i class="fas fa-user-plus mr-2"></i>Barátnak jelölés
+                    </button>
+                ` : ''}
+                <button onclick="openChatWindow('${userId}')" class="px-4 py-2 bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-dark-400 transition">
+                    <i class="fab fa-facebook-messenger mr-2"></i>Üzenet
+                </button>
+            `;
+        }
+        
         renderPosts(posts, 'profilePosts');
-    } catch (error) {}
-}
-
-function openChatWithProfile() {
-    if (currentProfileId && currentProfileId !== currentUser._id) {
-        openChatWindow(currentProfileId);
-    }
+    } catch (e) {}
 }
 
 // ============ NOTIFICATIONS ============
 async function loadNotifications() {
     try {
-        const notifications = await api('/notifications');
+        const notifs = await api('/notifications');
         await api('/notifications/read', { method: 'PUT' });
         updateBadges();
         
         const container = document.getElementById('notificationsList');
         const icons = { like: 'thumbs-up', comment: 'comment', friend: 'user-plus', message: 'comment-dots' };
-        const colors = { like: 'bg-primary-500', comment: 'bg-green-500', friend: 'bg-purple-500', message: 'bg-pink-500' };
+        const colors = { like: 'bg-blue-500', comment: 'bg-green-500', friend: 'bg-purple-500', message: 'bg-pink-500' };
         
-        container.innerHTML = notifications.length ? notifications.map(n => `
-            <div class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-300 transition ${!n.read ? 'bg-primary-50 dark:bg-primary-900/10' : ''}">
-                <div class="w-10 h-10 ${colors[n.type]} rounded-full flex items-center justify-center text-white">
+        container.innerHTML = notifs.length ? notifs.map(n => `
+            <div class="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-dark-300 transition ${!n.read ? 'bg-blue-50 dark:bg-blue-900/10' : ''}">
+                <div class="w-12 h-12 ${colors[n.type]} rounded-full flex items-center justify-center text-white">
                     <i class="fas fa-${icons[n.type]}"></i>
                 </div>
                 <div class="flex-1">
-                    <p class="text-gray-800 dark:text-white text-sm">${n.text}</p>
-                    <p class="text-xs text-gray-500">${getTimeAgo(n.createdAt)}</p>
+                    <p class="text-gray-800 dark:text-white">${n.text}</p>
+                    <p class="text-sm text-gray-500">${timeAgo(n.createdAt)}</p>
                 </div>
-                ${!n.read ? '<div class="w-3 h-3 bg-primary-500 rounded-full"></div>' : ''}
+                ${!n.read ? '<div class="w-3 h-3 bg-blue-500 rounded-full"></div>' : ''}
             </div>
-        `).join('') : '<p class="text-gray-500 text-center py-12">Nincs értesítés</p>';
-    } catch (error) {}
+        `).join('') : '<p class="text-center text-gray-500 py-12">Nincs értesítés</p>';
+    } catch (e) {}
 }
 
 // ============ SETTINGS ============
@@ -1543,7 +1789,7 @@ function showSettings() {
     document.getElementById('settingsAvatar').value = currentUser.avatar || '';
     document.getElementById('settingsCover').value = currentUser.cover || '';
     document.getElementById('settingsBio').value = currentUser.bio || '';
-    document.getElementById('profileMenu').classList.add('hidden');
+    document.getElementById('userMenu').classList.add('hidden');
 }
 
 function closeSettings() {
@@ -1562,72 +1808,76 @@ async function saveSettings() {
             })
         });
         currentUser = data;
-        updateUI();
+        updateUserUI();
         closeSettings();
-        showToast('Beállítások mentve!', 'success');
-    } catch (error) {}
+        toast('Beállítások mentve!', 'success');
+        if (document.getElementById('profilePage').classList.contains('hidden') === false) {
+            loadProfile(currentUser._id);
+        }
+    } catch (e) {}
 }
 
 // ============ ADMIN ============
-async function loadAdminPanel() {
-    if (!currentUser.isAdmin) return;
+async function loadAdmin() {
+    if (!currentUser.isAdmin) return navigate('feed');
     
     try {
         const stats = await api('/admin/stats');
         const users = await api('/admin/users');
         
-        document.getElementById('adminUserCount').textContent = stats.users;
-        document.getElementById('adminPostCount').textContent = stats.posts;
-        document.getElementById('adminMsgCount').textContent = stats.messages;
+        document.getElementById('adminUsers').textContent = stats.users;
+        document.getElementById('adminPosts').textContent = stats.posts;
+        document.getElementById('adminMessages').textContent = stats.messages;
         
         document.getElementById('adminUserList').innerHTML = users.map(u => `
             <div class="flex items-center gap-4 p-3 bg-gray-50 dark:bg-dark-300 rounded-xl">
-                <img src="${u.avatar}" class="w-10 h-10 rounded-full">
+                <img src="${getAvatar(u)}" class="w-10 h-10 rounded-full">
                 <div class="flex-1">
                     <p class="font-semibold text-gray-800 dark:text-white text-sm">
                         ${u.name}
-                        ${u.isAdmin ? '<span class="ml-2 text-xs bg-primary-100 text-primary-600 px-2 py-0.5 rounded-full">Admin</span>' : ''}
+                        ${u.isAdmin ? '<span class="ml-2 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-600 px-2 py-0.5 rounded-full">Admin</span>' : ''}
                     </p>
                     <p class="text-xs text-gray-500">${u.email}</p>
                 </div>
                 ${!u.isAdmin ? `
-                    <button onclick="deleteUser('${u._id}')" class="w-8 h-8 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center transition group">
-                        <i class="fas fa-trash text-gray-400 group-hover:text-red-500 text-sm"></i>
+                    <button onclick="deleteUser('${u._id}')" class="w-8 h-8 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center transition">
+                        <i class="fas fa-trash text-red-500 text-sm"></i>
                     </button>
                 ` : ''}
             </div>
         `).join('');
-    } catch (error) {}
+    } catch (e) {}
 }
 
 async function deleteUser(userId) {
     if (!confirm('Biztosan törlöd ezt a felhasználót?')) return;
     try {
         await api(`/admin/users/${userId}`, { method: 'DELETE' });
-        loadAdminPanel();
-        showToast('Felhasználó törölve!', 'success');
-    } catch (error) {}
+        toast('Felhasználó törölve!', 'success');
+        loadAdmin();
+    } catch (e) {}
 }
 
 // ============ INIT ============
 if (localStorage.getItem('darkMode') === 'true') {
     document.documentElement.classList.add('dark');
-    document.getElementById('themeIcon').className = 'fas fa-sun text-gray-600 dark:text-gray-400';
+    document.getElementById('themeIcon').className = 'fas fa-sun text-gray-700 dark:text-gray-300';
 }
 
 if (token) {
     api('/auth/me').then(user => {
         currentUser = user;
-        showApp();
+        initApp();
     }).catch(() => {
         localStorage.removeItem('token');
         token = null;
     });
 }
 
+// Close menus on outside click
 document.addEventListener('click', (e) => {
-    if (!e.target.closest('#profileMenu') && !e.target.closest('[onclick="toggleProfileMenu()"]')) {
-        document.getElementById('profileMenu').classList.add('hidden');
+    if (!e.target.closest('#userMenu') && !e.target.closest('[onclick="toggleUserMenu()"]')) {
+        document.getElementById('userMenu').classList.add('hidden');
     }
 });
 </script>
