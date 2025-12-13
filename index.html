@@ -322,8 +322,36 @@
         </div>
     </nav>
 
+    <!-- Right Sidebar - Friends List (Fixed) -->
+    <aside id="rightSidebar" class="fixed right-0 top-14 w-72 h-[calc(100vh-3.5rem)] bg-white dark:bg-dark-200 border-l border-gray-200 dark:border-dark-300 hidden lg:block overflow-y-auto z-30">
+        <div class="p-4">
+            <!-- Csoportok -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-semibold text-gray-500 dark:text-gray-400 text-sm">Csoportos beszélgetések</h3>
+                    <button onclick="openCreateGroupModal()" class="w-7 h-7 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition" title="Új csoport">
+                        <i class="fas fa-plus text-gray-600 dark:text-gray-400 text-xs"></i>
+                    </button>
+                </div>
+                <div id="sidebarGroups" class="space-y-1"></div>
+            </div>
+            
+            <!-- Online barátok -->
+            <div class="mb-4">
+                <h3 class="font-semibold text-gray-500 dark:text-gray-400 text-sm mb-3">Online barátok</h3>
+                <div id="sidebarOnlineFriends" class="space-y-1"></div>
+            </div>
+            
+            <!-- Összes barát -->
+            <div>
+                <h3 class="font-semibold text-gray-500 dark:text-gray-400 text-sm mb-3">Összes barát</h3>
+                <div id="sidebarAllFriends" class="space-y-1"></div>
+            </div>
+        </div>
+    </aside>
+
     <!-- Main Content Area -->
-    <main class="pt-14 min-h-screen">
+    <main class="pt-14 min-h-screen lg:mr-72">
         
         <!-- ========== FEED PAGE ========== -->
         <div id="feedPage" class="hidden">
@@ -791,6 +819,92 @@
     </div>
 </div>
 
+<!-- Create Group Modal -->
+<div id="createGroupModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-md shadow-2xl slide-up">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white">Új csoport létrehozása</h3>
+            <button onclick="closeCreateGroupModal()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                <i class="fas fa-times text-gray-500"></i>
+            </button>
+        </div>
+        <div class="p-4 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Csoport neve *</label>
+                <input type="text" id="groupName" placeholder="pl. Barátok, Család, Munka..." 
+                    class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Csoport kép URL (opcionális)</label>
+                <input type="text" id="groupImage" placeholder="https://example.com/kep.jpg" 
+                    class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tagok kiválasztása *</label>
+                <div id="groupMembersList" class="max-h-48 overflow-y-auto space-y-2 bg-gray-50 dark:bg-dark-300 rounded-lg p-2"></div>
+            </div>
+            <div id="selectedMembers" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div class="p-4 border-t border-gray-200 dark:border-dark-300">
+            <button onclick="createGroup()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition">
+                Csoport létrehozása
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Group Chat Modal -->
+<div id="groupChatModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-2xl h-[80vh] shadow-2xl slide-up flex flex-col">
+        <div id="groupChatHeader" class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300">
+            <!-- Header content will be injected -->
+        </div>
+        <div id="groupChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+        <div id="groupChatTyping" class="hidden px-4 py-2">
+            <div class="flex items-center gap-2 text-gray-500 text-sm">
+                <div class="flex gap-1">
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                </div>
+                <span id="groupTypingText">Valaki gépel...</span>
+            </div>
+        </div>
+        <div class="p-4 border-t border-gray-200 dark:border-dark-300">
+            <div class="flex items-center gap-2">
+                <button class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500 transition">
+                    <i class="fas fa-image text-xl"></i>
+                </button>
+                <div class="flex-1 relative">
+                    <input type="text" id="groupChatInput" placeholder="Írj üzenetet..." 
+                        class="w-full bg-gray-100 dark:bg-dark-300 rounded-full px-4 py-2 pr-10 outline-none text-gray-800 dark:text-white"
+                        oninput="handleGroupTyping()"
+                        onkeypress="if(event.key==='Enter')sendGroupMessage()">
+                    <button class="absolute right-3 top-1/2 -translate-y-1/2 text-blue-500">
+                        <i class="far fa-smile"></i>
+                    </button>
+                </div>
+                <button onclick="sendGroupMessage()" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500 transition">
+                    <i class="fas fa-paper-plane text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Group Info Modal -->
+<div id="groupInfoModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-md shadow-2xl slide-up max-h-[80vh] overflow-y-auto">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300 sticky top-0 bg-white dark:bg-dark-200">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white">Csoport beállításai</h3>
+            <button onclick="closeGroupInfoModal()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                <i class="fas fa-times text-gray-500"></i>
+            </button>
+        </div>
+        <div id="groupInfoContent" class="p-4"></div>
+    </div>
+</div>
+
 <!-- Call Modal -->
 <div id="callModal" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);">
     <div class="text-center slide-up">
@@ -836,10 +950,14 @@ let socket;
 let currentUser = null;
 let token = localStorage.getItem('token');
 let allUsers = [];
+let allGroups = [];
 let openChats = new Map();
+let openGroupChats = new Map();
 let currentMessengerChat = null;
+let currentGroupChat = null;
 let currentStory = null;
 let callState = { active: false, muted: false, videoOff: false, userId: null };
+let selectedGroupMembers = new Set();
 
 const API = window.location.origin + '/api';
 
@@ -1084,6 +1202,31 @@ async function initApp() {
     // Update UI
     updateUserUI();
     updateBadges();
+    loadRightSidebar();
+    
+    // Socket events for groups
+    socket.on('newGroupMessage', (data) => {
+        if (currentGroupChat && currentGroupChat._id === data.groupId) {
+            loadGroupMessages(data.groupId);
+        }
+        loadSidebarGroups();
+    });
+    
+    socket.on('groupTyping', (data) => {
+        if (currentGroupChat && currentGroupChat._id === data.groupId && data.userId !== currentUser._id) {
+            document.getElementById('groupChatTyping').classList.remove('hidden');
+            document.getElementById('groupTypingText').textContent = `${data.userName} gépel...`;
+        }
+    });
+    
+    socket.on('stopGroupTyping', (data) => {
+        if (currentGroupChat && currentGroupChat._id === data.groupId) {
+            document.getElementById('groupChatTyping').classList.add('hidden');
+        }
+    });
+    
+    socket.on('userOnline', () => loadRightSidebar());
+    socket.on('userOffline', () => loadRightSidebar());
     
     // Return promise
     return Promise.resolve();
@@ -2467,6 +2610,374 @@ document.addEventListener('click', (e) => {
         document.getElementById('userMenu').classList.add('hidden');
     }
 });
+
+// ============ RIGHT SIDEBAR ============
+async function loadRightSidebar() {
+    try {
+        const user = await api(`/users/${currentUser._id}`);
+        currentUser.friends = user.friends; // Frissítjük a currentUser barátait is
+        const friends = user.friends || [];
+        
+        // Online barátok
+        const onlineFriends = friends.filter(f => f.isOnline);
+        const offlineFriends = friends.filter(f => !f.isOnline);
+        
+        const onlineContainer = document.getElementById('sidebarOnlineFriends');
+        if (onlineFriends.length > 0) {
+            onlineContainer.innerHTML = onlineFriends.map(f => `
+                <div onclick="openChatWindow('${f._id}')" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
+                    <div class="relative">
+                        <img src="${getAvatar(f)}" class="w-9 h-9 rounded-full">
+                        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-dark-200 rounded-full"></span>
+                    </div>
+                    <span class="font-medium text-gray-800 dark:text-white text-sm truncate">${getUserName(f)}</span>
+                </div>
+            `).join('');
+        } else {
+            onlineContainer.innerHTML = '<p class="text-gray-500 text-sm py-2">Nincs online barát</p>';
+        }
+        
+        // Összes barát
+        const allContainer = document.getElementById('sidebarAllFriends');
+        if (offlineFriends.length > 0) {
+            allContainer.innerHTML = offlineFriends.map(f => `
+                <div onclick="openChatWindow('${f._id}')" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
+                    <div class="relative">
+                        <img src="${getAvatar(f)}" class="w-9 h-9 rounded-full">
+                        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-gray-400 border-2 border-white dark:border-dark-200 rounded-full"></span>
+                    </div>
+                    <span class="font-medium text-gray-600 dark:text-gray-400 text-sm truncate">${getUserName(f)}</span>
+                </div>
+            `).join('');
+        } else if (friends.length === 0) {
+            allContainer.innerHTML = '<p class="text-gray-500 text-sm py-2">Még nincsenek barátaid</p>';
+        } else {
+            allContainer.innerHTML = '';
+        }
+        
+        // Csoportok betöltése
+        await loadSidebarGroups();
+    } catch (e) {
+        console.error('Sidebar error:', e);
+    }
+}
+
+async function loadSidebarGroups() {
+    try {
+        allGroups = await api('/groups');
+        const container = document.getElementById('sidebarGroups');
+        
+        if (allGroups.length > 0) {
+            container.innerHTML = allGroups.map(g => `
+                <div onclick="openGroupChat('${g._id}')" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
+                    <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        ${g.image ? `<img src="${g.image}" class="w-9 h-9 rounded-full object-cover">` : `<i class="fas fa-users text-white text-sm"></i>`}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <span class="font-medium text-gray-800 dark:text-white text-sm truncate block">${g.name}</span>
+                        <span class="text-xs text-gray-500">${g.members.length} tag</span>
+                    </div>
+                    ${g.unreadCount > 0 ? `<span class="bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">${g.unreadCount}</span>` : ''}
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<p class="text-gray-500 text-sm py-2">Nincs még csoportod</p>';
+        }
+    } catch (e) {
+        console.error('Groups error:', e);
+    }
+}
+
+// ============ GROUP FUNCTIONS ============
+function openCreateGroupModal() {
+    document.getElementById('createGroupModal').classList.remove('hidden');
+    selectedGroupMembers.clear();
+    document.getElementById('groupName').value = '';
+    document.getElementById('groupImage').value = '';
+    document.getElementById('selectedMembers').innerHTML = '';
+    
+    // Barátok listája
+    const container = document.getElementById('groupMembersList');
+    const friends = currentUser.friends || [];
+    
+    if (friends.length > 0) {
+        // Szűrjük ki a barátokat az összes user közül
+        const friendUsers = allUsers.filter(u => friends.some(f => (f._id || f) === u._id));
+        container.innerHTML = friendUsers.map(f => `
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-400 cursor-pointer transition">
+                <input type="checkbox" value="${f._id}" onchange="toggleGroupMember('${f._id}', '${getUserName(f)}', '${getAvatar(f)}')" 
+                    class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                <img src="${getAvatar(f)}" class="w-8 h-8 rounded-full">
+                <span class="text-gray-800 dark:text-white text-sm">${getUserName(f)}</span>
+            </label>
+        `).join('');
+    } else {
+        container.innerHTML = '<p class="text-gray-500 text-sm py-4 text-center">Először adj hozzá barátokat!</p>';
+    }
+}
+
+function closeCreateGroupModal() {
+    document.getElementById('createGroupModal').classList.add('hidden');
+}
+
+function toggleGroupMember(userId, name, avatar) {
+    const container = document.getElementById('selectedMembers');
+    
+    if (selectedGroupMembers.has(userId)) {
+        selectedGroupMembers.delete(userId);
+        document.getElementById(`selected-${userId}`)?.remove();
+    } else {
+        selectedGroupMembers.add(userId);
+        const tag = document.createElement('span');
+        tag.id = `selected-${userId}`;
+        tag.className = 'inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-2 py-1 rounded-full text-xs';
+        tag.innerHTML = `
+            <img src="${avatar}" class="w-4 h-4 rounded-full">
+            ${name}
+            <button onclick="removeGroupMember('${userId}')" class="hover:text-red-500">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        container.appendChild(tag);
+    }
+}
+
+function removeGroupMember(userId) {
+    selectedGroupMembers.delete(userId);
+    document.getElementById(`selected-${userId}`)?.remove();
+    const checkbox = document.querySelector(`#groupMembersList input[value="${userId}"]`);
+    if (checkbox) checkbox.checked = false;
+}
+
+async function createGroup() {
+    const name = document.getElementById('groupName').value.trim();
+    const image = document.getElementById('groupImage').value.trim();
+    
+    if (!name) {
+        return toast('Add meg a csoport nevét!', 'error');
+    }
+    
+    if (selectedGroupMembers.size < 1) {
+        return toast('Válassz legalább egy tagot!', 'error');
+    }
+    
+    try {
+        const members = Array.from(selectedGroupMembers);
+        members.push(currentUser._id); // Magamat is hozzáadom
+        
+        await api('/groups', {
+            method: 'POST',
+            body: JSON.stringify({ name, image, members })
+        });
+        
+        closeCreateGroupModal();
+        loadSidebarGroups();
+        toast('Csoport létrehozva!', 'success');
+    } catch (e) {}
+}
+
+async function openGroupChat(groupId) {
+    try {
+        const group = await api(`/groups/${groupId}`);
+        currentGroupChat = group;
+        
+        // Join socket room
+        socket.emit('joinGroup', groupId);
+        
+        document.getElementById('groupChatModal').classList.remove('hidden');
+        
+        // Header
+        document.getElementById('groupChatHeader').innerHTML = `
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    ${group.image ? `<img src="${group.image}" class="w-10 h-10 rounded-full object-cover">` : `<i class="fas fa-users text-white"></i>`}
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-800 dark:text-white">${group.name}</p>
+                    <p class="text-xs text-gray-500">${group.members.length} tag</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1">
+                <button onclick="startGroupCall('${group._id}', 'audio')" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500 transition" title="Csoportos hanghívás">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <button onclick="startGroupCall('${group._id}', 'video')" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500 transition" title="Csoportos videóhívás">
+                    <i class="fas fa-video"></i>
+                </button>
+                <button onclick="openGroupInfoModal('${group._id}')" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-gray-500 transition" title="Csoport beállítások">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+                <button onclick="closeGroupChat()" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-gray-500 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        
+        await loadGroupMessages(groupId);
+    } catch (e) {}
+}
+
+function closeGroupChat() {
+    if (currentGroupChat) {
+        socket.emit('leaveGroup', currentGroupChat._id);
+    }
+    document.getElementById('groupChatModal').classList.add('hidden');
+    currentGroupChat = null;
+}
+
+async function loadGroupMessages(groupId) {
+    try {
+        const messages = await api(`/groups/${groupId}/messages`);
+        const container = document.getElementById('groupChatMessages');
+        
+        if (messages.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-500 py-8">Még nincs üzenet ebben a csoportban</p>';
+            return;
+        }
+        
+        container.innerHTML = messages.map(m => {
+            const isMe = m.from._id === currentUser._id;
+            const senderName = getUserName(m.from);
+            const badge = getUserBadge(m.from);
+            
+            return `
+                <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                    <div class="flex gap-2 max-w-md ${isMe ? 'flex-row-reverse' : ''}">
+                        ${!isMe ? `<img src="${getAvatar(m.from)}" class="w-8 h-8 rounded-full flex-shrink-0">` : ''}
+                        <div>
+                            ${!isMe ? `<p class="text-xs text-gray-500 mb-1">${senderName}${badge}</p>` : ''}
+                            <div class="${isMe 
+                                ? 'bg-blue-500 text-white' 
+                                : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-4 py-2">
+                                ${m.text}
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1 ${isMe ? 'text-right' : ''}">${timeAgo(m.createdAt)}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        container.scrollTop = container.scrollHeight;
+    } catch (e) {}
+}
+
+let groupTypingTimeout;
+function handleGroupTyping() {
+    if (currentGroupChat) {
+        socket.emit('groupTyping', { groupId: currentGroupChat._id, userId: currentUser._id, userName: getUserName(currentUser) });
+        clearTimeout(groupTypingTimeout);
+        groupTypingTimeout = setTimeout(() => {
+            socket.emit('stopGroupTyping', { groupId: currentGroupChat._id, userId: currentUser._id });
+        }, 1000);
+    }
+}
+
+async function sendGroupMessage() {
+    const input = document.getElementById('groupChatInput');
+    const text = input.value.trim();
+    if (!text || !currentGroupChat) return;
+    
+    try {
+        await api(`/groups/${currentGroupChat._id}/messages`, {
+            method: 'POST',
+            body: JSON.stringify({ text })
+        });
+        input.value = '';
+        socket.emit('stopGroupTyping', { groupId: currentGroupChat._id, userId: currentUser._id });
+    } catch (e) {}
+}
+
+async function openGroupInfoModal(groupId) {
+    try {
+        const group = await api(`/groups/${groupId}`);
+        document.getElementById('groupInfoModal').classList.remove('hidden');
+        
+        const isAdmin = group.admins.some(a => (a._id || a) === currentUser._id);
+        const isCreator = (group.creator._id || group.creator) === currentUser._id;
+        
+        document.getElementById('groupInfoContent').innerHTML = `
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    ${group.image ? `<img src="${group.image}" class="w-20 h-20 rounded-full object-cover">` : `<i class="fas fa-users text-white text-2xl"></i>`}
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white">${group.name}</h3>
+                <p class="text-gray-500 text-sm">${group.members.length} tag</p>
+            </div>
+            
+            <div class="mb-4">
+                <h4 class="font-semibold text-gray-800 dark:text-white mb-2">Tagok</h4>
+                <div class="space-y-2 max-h-48 overflow-y-auto">
+                    ${group.members.map(m => {
+                        const memberIsAdmin = group.admins.some(a => (a._id || a) === m._id);
+                        const memberIsCreator = (group.creator._id || group.creator) === m._id;
+                        return `
+                            <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-dark-300 rounded-lg">
+                                <div class="flex items-center gap-2">
+                                    <img src="${getAvatar(m)}" class="w-8 h-8 rounded-full">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800 dark:text-white">${getUserName(m)}${getUserBadge(m)}</p>
+                                        <p class="text-xs text-gray-500">
+                                            ${memberIsCreator ? 'Létrehozó' : memberIsAdmin ? 'Admin' : 'Tag'}
+                                        </p>
+                                    </div>
+                                </div>
+                                ${isAdmin && !memberIsCreator && m._id !== currentUser._id ? `
+                                    <button onclick="removeMemberFromGroup('${group._id}', '${m._id}')" class="text-red-500 hover:text-red-600 text-sm">
+                                        <i class="fas fa-user-minus"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            
+            ${isAdmin ? `
+                <div class="mb-4">
+                    <button onclick="showAddMembersToGroup('${group._id}')" class="w-full py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition">
+                        <i class="fas fa-user-plus mr-2"></i>Tagok hozzáadása
+                    </button>
+                </div>
+            ` : ''}
+            
+            <div class="border-t border-gray-200 dark:border-dark-300 pt-4">
+                <button onclick="leaveGroup('${group._id}')" class="w-full py-2 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-lg font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Kilépés a csoportból
+                </button>
+            </div>
+        `;
+    } catch (e) {}
+}
+
+function closeGroupInfoModal() {
+    document.getElementById('groupInfoModal').classList.add('hidden');
+}
+
+async function removeMemberFromGroup(groupId, memberId) {
+    if (!confirm('Biztosan eltávolítod ezt a tagot?')) return;
+    try {
+        await api(`/groups/${groupId}/members/${memberId}`, { method: 'DELETE' });
+        openGroupInfoModal(groupId);
+        toast('Tag eltávolítva!', 'success');
+    } catch (e) {}
+}
+
+async function leaveGroup(groupId) {
+    if (!confirm('Biztosan kilépsz a csoportból?')) return;
+    try {
+        await api(`/groups/${groupId}/leave`, { method: 'POST' });
+        closeGroupInfoModal();
+        closeGroupChat();
+        loadSidebarGroups();
+        toast('Kiléptél a csoportból!', 'info');
+    } catch (e) {}
+}
+
+function startGroupCall(groupId, type) {
+    toast(`Csoportos ${type === 'video' ? 'videó' : 'hang'}hívás indítása...`, 'info');
+    // Itt lenne a csoportos hívás logika
+}
 </script>
 
 </body>
