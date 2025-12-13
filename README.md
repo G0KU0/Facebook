@@ -162,10 +162,16 @@ socialbook/
 
 ### Backend
 - Node.js + Express
-- MongoDB + Mongoose
+- MongoDB + Mongoose (TTL index az üzenetek automatikus törléséhez)
 - JWT (autentikáció)
 - Socket.io (valós idejű)
 - bcryptjs (jelszó titkosítás)
+
+### 💬 Üzenetek tárolása
+- Az üzenetek **48 óra után automatikusan törlődnek** a MongoDB-ből
+- Ez a MongoDB TTL (Time-To-Live) index segítségével történik
+- A csoportos üzenetek is 48 óra után törlődnek
+- Ez segít megőrizni a tárhely takarékosságot
 
 ---
 
