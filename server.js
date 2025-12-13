@@ -747,6 +747,12 @@ io.on('connection', (socket) => {
     });
 });
 
+// ============ CATCH-ALL ROUTE (SPA) ============
+// Minden ismeretlen útvonalat az index.html-re irányít
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // ============ SZERVER INDÍTÁSA ============
 
 const PORT = process.env.PORT || 3000;
