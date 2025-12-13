@@ -126,12 +126,16 @@ Nyisd meg: **http://localhost:3000**
 
 ---
 
-## 🔐 Alapértelmezett Admin Bejelentkezés
+## 🔐 Bejelentkezés
 
-- **Email:** admin@socialbook.hu
-- **Jelszó:** admin123
+### Tulajdonos (Owner)
+- **Email:** owner@socialbook.hu
+- **Jelszó:** owner123
 
-> ⚠️ **Fontos:** Éles környezetben változtasd meg az admin jelszót a `.env` fájlban!
+> ⚠️ **Fontos:** Éles környezetben változtasd meg a tulajdonos jelszót a `.env` fájlban!
+
+### Adminok
+Az adminokat a **tulajdonos** nevezi ki a weboldalon keresztül az Admin Panelen. Az admin jogosultságok a MongoDB-ben tárolódnak.
 
 ---
 
@@ -214,13 +218,21 @@ socialbook/
 
 ## 🎨 Testreszabás
 
-### Admin felhasználó módosítása
+### Tulajdonos (Owner) módosítása
 Szerkeszd a `.env` fájlt:
 ```env
-ADMIN_NAME=Új Admin Név
-ADMIN_EMAIL=uj.email@example.com
-ADMIN_PASSWORD=uj_jelszo_123
+OWNER_FIRSTNAME=Új Keresztnév
+OWNER_LASTNAME=Új Vezetéknév
+OWNER_USERNAME=uj_felhasznalonev
+OWNER_EMAIL=uj.email@example.com
+OWNER_PASSWORD=uj_jelszo_123
 ```
+
+### Admin jogosultság adása
+1. Jelentkezz be tulajdonosként
+2. Menj az Admin Panelre (jobb felső menüből)
+3. Kattints az "Admin adása" gombra bármely felhasználónál
+4. Az admin jogot bármikor elveheted ugyanitt
 
 ### Port módosítása
 ```env
