@@ -1152,18 +1152,21 @@ async function loadStories() {
                     </div>
                 </div>
             </div>
-            ${stories.map(s => `
-                <div onclick="viewStory('${s._id}')" class="flex-shrink-0 cursor-pointer group">
-                    <div class="story-ring rounded-xl">
-                        <div class="w-28 h-48 rounded-xl relative overflow-hidden bg-gray-900">
-                            <img src="${s.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                            <img src="${getAvatar(s.author)}" class="absolute top-2 left-2 w-8 h-8 rounded-full ring-2 ring-blue-500">
-                            <p class="absolute bottom-2 left-2 right-2 text-white text-xs font-medium truncate">${s.author.name}</p>
+            ${stories.map(s => {
+                const storyAuthorName = getUserName(s.author);
+                return `
+                    <div onclick="viewStory('${s._id}')" class="flex-shrink-0 cursor-pointer group">
+                        <div class="story-ring rounded-xl">
+                            <div class="w-28 h-48 rounded-xl relative overflow-hidden bg-gray-900">
+                                <img src="${s.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                                <img src="${getAvatar(s.author)}" class="absolute top-2 left-2 w-8 h-8 rounded-full ring-2 ring-blue-500">
+                                <p class="absolute bottom-2 left-2 right-2 text-white text-xs font-medium truncate">${storyAuthorName}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('')}
+                `;
+            }).join('')}
         `;
     } catch (e) {}
 }
@@ -1185,14 +1188,15 @@ function renderPosts(posts, containerId) {
     container.innerHTML = posts.map(post => {
         const liked = post.likes.includes(currentUser._id);
         const canDelete = post.author._id === currentUser._id || currentUser.isAdmin;
+        const authorName = getUserName(post.author);
         
         return `
             <div class="bg-white dark:bg-dark-200 rounded-xl shadow slide-up">
                 <div class="p-4">
                     <div class="flex items-center gap-3">
-                        <img src="${getAvatar(post.author)}" class="w-10 h-10 rounded-full cursor-pointer hover:brightness-95 transition" onclick="navigate('profile', '${post.author._id}')">
+                        <img src="${getAvatar(post.author)}" class="w-10 h-10 rounded-full cursor-pointer hover:brightness-95 transition" onclick="navigateToProfile('${post.author.username || post.author._id}')">
                         <div class="flex-1">
-                            <p class="font-semibold text-gray-800 dark:text-white text-sm cursor-pointer hover:underline" onclick="navigate('profile', '${post.author._id}')">${post.author.name}</p>
+                            <p class="font-semibold text-gray-800 dark:text-white text-sm cursor-pointer hover:underline" onclick="navigateToProfile('${post.author.username || post.author._id}')">${authorName}</p>
                             <p class="text-xs text-gray-500">${timeAgo(post.createdAt)} · <i class="fas fa-globe-americas"></i></p>
                         </div>
                         ${canDelete ? `
@@ -1230,15 +1234,18 @@ function renderPosts(posts, containerId) {
                     </button>
                 </div>
                 <div class="p-4">
-                    ${post.comments.slice(-3).map(c => `
-                        <div class="flex gap-2 mb-2">
-                            <img src="${getAvatar(c.author)}" class="w-8 h-8 rounded-full">
-                            <div class="bg-gray-100 dark:bg-dark-300 rounded-2xl px-3 py-2">
-                                <p class="font-semibold text-xs text-gray-800 dark:text-white">${c.author?.name || 'Ismeretlen'}</p>
-                                <p class="text-sm text-gray-700 dark:text-gray-300">${c.text}</p>
+                    ${post.comments.slice(-3).map(c => {
+                        const commentAuthorName = getUserName(c.author);
+                        return `
+                            <div class="flex gap-2 mb-2">
+                                <img src="${getAvatar(c.author)}" class="w-8 h-8 rounded-full">
+                                <div class="bg-gray-100 dark:bg-dark-300 rounded-2xl px-3 py-2">
+                                    <p class="font-semibold text-xs text-gray-800 dark:text-white">${commentAuthorName}</p>
+                                    <p class="text-sm text-gray-700 dark:text-gray-300">${c.text}</p>
+                                </div>
                             </div>
-                        </div>
-                    `).join('')}
+                        `;
+                    }).join('')}
                     <div class="flex gap-2 mt-2">
                         <img src="${getAvatar(currentUser)}" class="w-8 h-8 rounded-full">
                         <input type="text" id="comment-${post._id}" placeholder="Írj hozzászólást..." 
@@ -1385,8 +1392,10 @@ async function viewStory(storyId) {
         document.getElementById('storyCreate').classList.add('hidden');
         document.getElementById('storyView').classList.remove('hidden');
         
+        const storyAuthorName = getUserName(story.author);
+        
         document.getElementById('storyViewAvatar').src = getAvatar(story.author);
-        document.getElementById('storyViewName').textContent = story.author.name;
+        document.getElementById('storyViewName').textContent = storyAuthorName;
         document.getElementById('storyViewTime').textContent = timeAgo(story.createdAt);
         document.getElementById('storyViewImg').src = story.image;
         
