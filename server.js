@@ -183,16 +183,29 @@ app.get('/api/auth/me', auth, async (req, res) => {
 
 // ============ USER ROUTES ============
 
-// Összes felhasználó
+// Összes felhasználó (kereséshez is)
 app.get('/api/users', auth, async (req, res) => {
-    const users = await User.find({ _id: { $ne: req.user._id } }).select('-password');
-    res.json(users);
+    try {
+        const users = await User.find({ _id: { $ne: req.user._id } })
+            .select('-password')
+            .sort({ name: 1 });
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Egy felhasználó
 app.get('/api/users/:id', auth, async (req, res) => {
-    const user = await User.findById(req.params.id).select('-password').populate('friends', 'name avatar');
-    res.json(user);
+    try {
+        const user = await User.findById(req.params.id)
+            .select('-password')
+            .populate('friends', 'name avatar isOnline');
+        if (!user) return res.status(404).json({ error: 'Felhasználó nem található!' });
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Profil frissítése
@@ -409,20 +422,27 @@ app.post('/api/friends/decline/:requestId', auth, async (req, res) => {
 
 // Javaslatok
 app.get('/api/friends/suggestions', auth, async (req, res) => {
-    const requests = await FriendRequest.find({
-        $or: [{ from: req.user._id }, { to: req.user._id }]
-    });
-    const excludeIds = [
-        req.user._id,
-        ...req.user.friends,
-        ...requests.map(r => r.from),
-        ...requests.map(r => r.to)
-    ];
+    try {
+        const user = await User.findById(req.user._id);
+        const requests = await FriendRequest.find({
+            $or: [{ from: req.user._id }, { to: req.user._id }],
+            status: 'pending'
+        });
+        
+        const excludeIds = [
+            req.user._id,
+            ...(user.friends || []),
+            ...requests.map(r => r.from.toString()),
+            ...requests.map(r => r.to.toString())
+        ];
 
-    const suggestions = await User.find({ _id: { $nin: excludeIds } })
-        .select('name avatar')
-        .limit(10);
-    res.json(suggestions);
+        const suggestions = await User.find({ _id: { $nin: excludeIds } })
+            .select('name avatar isOnline')
+            .limit(12);
+        res.json(suggestions);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // ============ NOTIFICATION ROUTES ============
