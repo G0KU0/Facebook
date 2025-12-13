@@ -30,7 +30,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/socialboo
 
 // Felhasználó séma
 const userSchema = new mongoose.Schema({
-    name: { type: String, required: true },
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
+    username: { type: String, required: true, unique: true, lowercase: true, trim: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     avatar: { type: String, default: '' },
@@ -41,6 +43,15 @@ const userSchema = new mongoose.Schema({
     isOnline: { type: Boolean, default: false },
     lastSeen: { type: Date, default: Date.now }
 }, { timestamps: true });
+
+// Virtuális mező a teljes névhez
+userSchema.virtual('name').get(function() {
+    return `${this.firstName} ${this.lastName}`;
+});
+
+// Virtuálisok megjelenjenek a JSON-ban
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
 
 // Poszt séma
 const postSchema = new mongoose.Schema({
@@ -100,7 +111,9 @@ async function createAdmin() {
     if (!adminExists) {
         const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
         await User.create({
-            name: process.env.ADMIN_NAME || 'Admin',
+            firstName: process.env.ADMIN_FIRSTNAME || 'Admin',
+            lastName: process.env.ADMIN_LASTNAME || 'User',
+            username: process.env.ADMIN_USERNAME || 'admin',
             email: process.env.ADMIN_EMAIL,
             password: hashedPassword,
             avatar: `https://ui-avatars.com/api/?name=Admin&background=6366f1&color=fff&size=200`,
@@ -137,20 +150,47 @@ const adminAuth = async (req, res, next) => {
 // Regisztráció
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { name, email, password } = req.body;
-        const exists = await User.findOne({ email });
-        if (exists) return res.status(400).json({ error: 'Ez az email már foglalt!' });
+        const { firstName, lastName, username, email, password } = req.body;
+        
+        // Email ellenőrzés
+        const emailExists = await User.findOne({ email });
+        if (emailExists) return res.status(400).json({ error: 'Ez az email már foglalt!' });
+        
+        // Username ellenőrzés
+        const usernameExists = await User.findOne({ username: username.toLowerCase() });
+        if (usernameExists) return res.status(400).json({ error: 'Ez a felhasználónév már foglalt!' });
+        
+        // Username formátum ellenőrzés
+        if (!/^[a-zA-Z0-9._]+$/.test(username)) {
+            return res.status(400).json({ error: 'A felhasználónév csak betűket, számokat, pontot és aláhúzást tartalmazhat!' });
+        }
+        
+        if (username.length < 3 || username.length > 30) {
+            return res.status(400).json({ error: 'A felhasználónév 3-30 karakter hosszú legyen!' });
+        }
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.create({
-            name,
+            firstName,
+            lastName,
+            username: username.toLowerCase(),
             email,
             password: hashedPassword,
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&size=200`
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=random&size=200`
         });
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'titkos_kulcs', { expiresIn: '7d' });
         res.json({ token, user: { ...user.toObject(), password: undefined } });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Username elérhetőség ellenőrzése
+app.get('/api/auth/check-username/:username', async (req, res) => {
+    try {
+        const exists = await User.findOne({ username: req.params.username.toLowerCase() });
+        res.json({ available: !exists });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -195,12 +235,25 @@ app.get('/api/users', auth, async (req, res) => {
     }
 });
 
-// Egy felhasználó
+// Egy felhasználó ID alapján
 app.get('/api/users/:id', auth, async (req, res) => {
     try {
         const user = await User.findById(req.params.id)
             .select('-password')
-            .populate('friends', 'name avatar isOnline');
+            .populate('friends', 'firstName lastName username avatar isOnline');
+        if (!user) return res.status(404).json({ error: 'Felhasználó nem található!' });
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Egy felhasználó USERNAME alapján
+app.get('/api/users/username/:username', auth, async (req, res) => {
+    try {
+        const user = await User.findOne({ username: req.params.username.toLowerCase() })
+            .select('-password')
+            .populate('friends', 'firstName lastName username avatar isOnline');
         if (!user) return res.status(404).json({ error: 'Felhasználó nem található!' });
         res.json(user);
     } catch (error) {
@@ -210,9 +263,17 @@ app.get('/api/users/:id', auth, async (req, res) => {
 
 // Profil frissítése
 app.put('/api/users/profile', auth, async (req, res) => {
-    const { avatar, cover, bio, name } = req.body;
-    const user = await User.findByIdAndUpdate(req.user._id, { avatar, cover, bio, name }, { new: true }).select('-password');
-    res.json(user);
+    try {
+        const { avatar, cover, bio, firstName, lastName } = req.body;
+        const user = await User.findByIdAndUpdate(
+            req.user._id, 
+            { avatar, cover, bio, firstName, lastName }, 
+            { new: true }
+        ).select('-password');
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // ============ POST ROUTES ============
