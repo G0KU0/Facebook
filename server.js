@@ -11,6 +11,8 @@ const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const FormData = require('form-data');
 
 const app = express();
 const server = http.createServer(app);
@@ -754,6 +756,54 @@ app.get('/api/notifications/unread', auth, async (req, res) => {
     const count = await Notification.countDocuments({ user: req.user._id, read: false });
     const msgCount = await Message.countDocuments({ to: req.user._id, read: false });
     res.json({ notifications: count, messages: msgCount });
+});
+
+// ============ IMAGE UPLOAD (ImgBB) ============
+
+app.post('/api/upload', auth, async (req, res) => {
+    try {
+        const { image } = req.body; // base64 kép
+        
+        if (!image) {
+            return res.status(400).json({ error: 'Nincs kép!' });
+        }
+        
+        const apiKey = process.env.IMGBB_API_KEY;
+        
+        if (!apiKey || apiKey === 'your_imgbb_api_key_here') {
+            // Ha nincs API kulcs, használjuk a base64-et (fallback)
+            console.log('⚠️ ImgBB API kulcs nincs beállítva, base64 használata');
+            return res.json({ url: image });
+        }
+        
+        // Base64 prefix eltávolítása ha van
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+        
+        // ImgBB API hívás
+        const formData = new URLSearchParams();
+        formData.append('key', apiKey);
+        formData.append('image', base64Data);
+        
+        const response = await fetch('https://api.imgbb.com/1/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log('✅ Kép feltöltve:', data.data.url);
+            res.json({ url: data.data.url });
+        } else {
+            console.error('❌ ImgBB hiba:', data);
+            // Fallback base64-re
+            res.json({ url: image });
+        }
+    } catch (error) {
+        console.error('❌ Képfeltöltés hiba:', error);
+        // Fallback base64-re hiba esetén
+        res.json({ url: req.body.image });
+    }
 });
 
 // ============ STORY ROUTES ============
