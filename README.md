@@ -129,7 +129,7 @@ Nyisd meg: **http://localhost:3000**
 ## 🔐 Bejelentkezés
 
 ### Tulajdonos (Owner)
-- **Email:** owner@socialbook.hu
+- **Felhasználónév:** socialbook
 - **Jelszó:** owner123
 
 > ⚠️ **Fontos:** Éles környezetben változtasd meg a tulajdonos jelszót a `.env` fájlban!
