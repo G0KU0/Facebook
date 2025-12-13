@@ -79,12 +79,13 @@ const postSchema = new mongoose.Schema({
     }]
 }, { timestamps: true });
 
-// Üzenet séma
+// Üzenet séma (48 óra után automatikusan törlődik)
 const messageSchema = new mongoose.Schema({
     from: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     to: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     text: { type: String, required: true },
-    read: { type: Boolean, default: false }
+    read: { type: Boolean, default: false },
+    expiresAt: { type: Date, default: () => new Date(Date.now() + 48 * 60 * 60 * 1000), index: { expires: 0 } }
 }, { timestamps: true });
 
 // Barátkérelem séma
@@ -128,10 +129,30 @@ const groupSchema = new mongoose.Schema({
     messages: [{
         from: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         text: String,
-        createdAt: { type: Date, default: Date.now }
+        createdAt: { type: Date, default: Date.now },
+        expiresAt: { type: Date, default: () => new Date(Date.now() + 48 * 60 * 60 * 1000) }
     }],
     lastMessage: { type: Date, default: Date.now }
 }, { timestamps: true });
+
+// Csoport üzenetek tisztítása (48 óránál régebbiek törlése)
+async function cleanOldGroupMessages() {
+    try {
+        const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
+        await Group.updateMany(
+            {},
+            { $pull: { messages: { createdAt: { $lt: cutoff } } } }
+        );
+        console.log('✅ Régi csoportüzenetek törölve');
+    } catch (error) {
+        console.error('Csoportüzenet törlés hiba:', error);
+    }
+}
+
+// Óránként futtatjuk a tisztítást
+setInterval(cleanOldGroupMessages, 60 * 60 * 1000);
+// Induláskor is lefut
+setTimeout(cleanOldGroupMessages, 5000);
 
 const Group = mongoose.model('Group', groupSchema);
 
