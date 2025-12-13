@@ -31,13 +31,22 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/socialboo
 // Felhasználó séma
 const userSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
+    lastName: { type: String, default: '' }, // Nem kötelező (tulajdonosnak lehet csak egy neve)
     username: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     avatar: { type: String, default: '' },
     cover: { type: String, default: '' },
     bio: { type: String, default: '' },
+    // Részletes profil adatok
+    workplace: { type: String, default: '' }, // Munkahely
+    jobTitle: { type: String, default: '' }, // Munkakör
+    school: { type: String, default: '' }, // Iskola
+    college: { type: String, default: '' }, // Egyetem/Főiskola
+    currentCity: { type: String, default: '' }, // Jelenlegi város
+    hometown: { type: String, default: '' }, // Szülőváros
+    relationship: { type: String, default: '' }, // Kapcsolati állapot
+    // Barátok és jogok
     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     isOwner: { type: Boolean, default: false },
     isAdmin: { type: Boolean, default: false },
@@ -164,13 +173,14 @@ async function createOwner() {
     const ownerExists = await User.findOne({ email: process.env.OWNER_EMAIL });
     if (!ownerExists && process.env.OWNER_EMAIL) {
         const hashedPassword = await bcrypt.hash(process.env.OWNER_PASSWORD, 10);
+        const ownerName = process.env.OWNER_FIRSTNAME || 'Owner';
         await User.create({
-            firstName: process.env.OWNER_FIRSTNAME || 'Owner',
-            lastName: process.env.OWNER_LASTNAME || 'User',
+            firstName: ownerName,
+            lastName: process.env.OWNER_LASTNAME || '', // Tulajdonosnak lehet üres
             username: process.env.OWNER_USERNAME || 'owner',
             email: process.env.OWNER_EMAIL,
             password: hashedPassword,
-            avatar: `https://ui-avatars.com/api/?name=Owner&background=f59e0b&color=fff&size=200`,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(ownerName)}&background=f59e0b&color=fff&size=200`,
             isOwner: true,
             isAdmin: true
         });
@@ -181,7 +191,10 @@ async function createOwner() {
         ownerExists.isAdmin = true;
         ownerExists.username = process.env.OWNER_USERNAME || ownerExists.username || 'owner';
         ownerExists.firstName = process.env.OWNER_FIRSTNAME || ownerExists.firstName || 'Owner';
-        ownerExists.lastName = process.env.OWNER_LASTNAME || ownerExists.lastName || 'User';
+        // Tulajdonosnak a vezetéknév opcionális - ha nincs megadva az env-ben, marad ami volt
+        if (process.env.OWNER_LASTNAME !== undefined) {
+            ownerExists.lastName = process.env.OWNER_LASTNAME;
+        }
         await ownerExists.save();
         console.log('✅ Tulajdonos adatok frissítve!');
     }
@@ -223,6 +236,7 @@ app.post('/api/auth/register', async (req, res) => {
         if (!firstName || !firstName.trim()) {
             return res.status(400).json({ error: 'A keresztnév megadása kötelező!' });
         }
+        // Vezetéknév kötelező normál felhasználóknak
         if (!lastName || !lastName.trim()) {
             return res.status(400).json({ error: 'A vezetéknév megadása kötelező!' });
         }
@@ -343,10 +357,16 @@ app.get('/api/users/username/:username', auth, async (req, res) => {
 // Profil frissítése
 app.put('/api/users/profile', auth, async (req, res) => {
     try {
-        const { avatar, cover, bio, firstName, lastName } = req.body;
+        const { avatar, cover, bio, firstName, lastName, workplace, jobTitle, school, college, currentCity, hometown, relationship } = req.body;
+        
+        // Vezetéknév kötelező, kivéve ha tulajdonos
+        if (!req.user.isOwner && (!lastName || !lastName.trim())) {
+            return res.status(400).json({ error: 'A vezetéknév megadása kötelező!' });
+        }
+        
         const user = await User.findByIdAndUpdate(
             req.user._id, 
-            { avatar, cover, bio, firstName, lastName }, 
+            { avatar, cover, bio, firstName, lastName: lastName || '', workplace, jobTitle, school, college, currentCity, hometown, relationship }, 
             { new: true }
         ).select('-password');
         res.json(user);
@@ -608,6 +628,70 @@ app.post('/api/friends/accept/:requestId', auth, async (req, res) => {
 app.post('/api/friends/decline/:requestId', auth, async (req, res) => {
     await FriendRequest.findByIdAndDelete(req.params.requestId);
     res.json({ message: 'Elutasítva!' });
+});
+
+// Barátkérelem visszavonása
+app.delete('/api/friends/request/:userId', auth, async (req, res) => {
+    try {
+        await FriendRequest.findOneAndDelete({
+            from: req.user._id,
+            to: req.params.userId,
+            status: 'pending'
+        });
+        res.json({ message: 'Barátkérelem visszavonva!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Barátkérelem státusz lekérése egy felhasználóval
+app.get('/api/friends/status/:userId', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        const targetId = req.params.userId;
+        
+        // Már barátok?
+        const isFriend = user.friends.some(f => f.toString() === targetId);
+        if (isFriend) {
+            return res.json({ status: 'friends' });
+        }
+        
+        // Én küldtem kérelmet?
+        const sentRequest = await FriendRequest.findOne({
+            from: req.user._id,
+            to: targetId,
+            status: 'pending'
+        });
+        if (sentRequest) {
+            return res.json({ status: 'request_sent', requestId: sentRequest._id });
+        }
+        
+        // Nekem küldtek kérelmet?
+        const receivedRequest = await FriendRequest.findOne({
+            from: targetId,
+            to: req.user._id,
+            status: 'pending'
+        });
+        if (receivedRequest) {
+            return res.json({ status: 'request_received', requestId: receivedRequest._id });
+        }
+        
+        // Nincs kapcsolat
+        res.json({ status: 'none' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Barátság törlése
+app.delete('/api/friends/:userId', auth, async (req, res) => {
+    try {
+        await User.findByIdAndUpdate(req.user._id, { $pull: { friends: req.params.userId } });
+        await User.findByIdAndUpdate(req.params.userId, { $pull: { friends: req.user._id } });
+        res.json({ message: 'Barát törölve!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Javaslatok
