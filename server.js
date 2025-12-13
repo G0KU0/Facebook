@@ -391,8 +391,8 @@ app.put('/api/users/username', auth, async (req, res) => {
 // Posztok lekérése
 app.get('/api/posts', auth, async (req, res) => {
     const posts = await Post.find()
-        .populate('author', 'name avatar')
-        .populate('comments.author', 'name avatar')
+        .populate('author', 'firstName lastName username avatar')
+        .populate('comments.author', 'firstName lastName username avatar')
         .sort({ createdAt: -1 });
     res.json(posts);
 });
@@ -400,8 +400,8 @@ app.get('/api/posts', auth, async (req, res) => {
 // Felhasználó posztjai
 app.get('/api/posts/user/:id', auth, async (req, res) => {
     const posts = await Post.find({ author: req.params.id })
-        .populate('author', 'name avatar')
-        .populate('comments.author', 'name avatar')
+        .populate('author', 'firstName lastName username avatar')
+        .populate('comments.author', 'firstName lastName username avatar')
         .sort({ createdAt: -1 });
     res.json(posts);
 });
@@ -410,7 +410,7 @@ app.get('/api/posts/user/:id', auth, async (req, res) => {
 app.post('/api/posts', auth, async (req, res) => {
     const { content, image } = req.body;
     const post = await Post.create({ author: req.user._id, content, image });
-    await post.populate('author', 'name avatar');
+    await post.populate('author', 'firstName lastName username avatar');
     io.emit('newPost', post);
     res.json(post);
 });
@@ -432,6 +432,8 @@ app.post('/api/posts/:id/like', auth, async (req, res) => {
     const post = await Post.findById(req.params.id);
     const idx = post.likes.indexOf(req.user._id);
     
+    const userName = `${req.user.firstName} ${req.user.lastName}`.trim();
+    
     if (idx > -1) {
         post.likes.splice(idx, 1);
     } else {
@@ -439,7 +441,7 @@ app.post('/api/posts/:id/like', auth, async (req, res) => {
         if (post.author.toString() !== req.user._id.toString()) {
             await Notification.create({
                 user: post.author,
-                text: `${req.user.name} kedveli a bejegyzésedet`,
+                text: `${userName} kedveli a bejegyzésedet`,
                 type: 'like'
             });
             io.to(post.author.toString()).emit('notification');
@@ -447,7 +449,7 @@ app.post('/api/posts/:id/like', auth, async (req, res) => {
     }
     
     await post.save();
-    await post.populate('author', 'name avatar');
+    await post.populate('author', 'firstName lastName username avatar');
     io.emit('updatePost', post);
     res.json(post);
 });
@@ -457,13 +459,15 @@ app.post('/api/posts/:id/comment', auth, async (req, res) => {
     const post = await Post.findById(req.params.id);
     post.comments.push({ author: req.user._id, text: req.body.text });
     await post.save();
-    await post.populate('author', 'name avatar');
-    await post.populate('comments.author', 'name avatar');
+    await post.populate('author', 'firstName lastName username avatar');
+    await post.populate('comments.author', 'firstName lastName username avatar');
+    
+    const userName = `${req.user.firstName} ${req.user.lastName}`.trim();
     
     if (post.author._id.toString() !== req.user._id.toString()) {
         await Notification.create({
             user: post.author._id,
-            text: `${req.user.name} hozzászólt a bejegyzésedhez`,
+            text: `${userName} hozzászólt a bejegyzésedhez`,
             type: 'comment'
         });
         io.to(post.author._id.toString()).emit('notification');
@@ -551,9 +555,11 @@ app.post('/api/friends/request/:userId', auth, async (req, res) => {
 
     const request = await FriendRequest.create({ from: req.user._id, to: req.params.userId });
     
+    const userName = `${req.user.firstName} ${req.user.lastName}`.trim();
+    
     await Notification.create({
         user: req.params.userId,
-        text: `${req.user.name} barátkérelmet küldött`,
+        text: `${userName} barátkérelmet küldött`,
         type: 'friend'
     });
     io.to(req.params.userId).emit('notification');
@@ -575,9 +581,11 @@ app.post('/api/friends/accept/:requestId', auth, async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, { $addToSet: { friends: request.from } });
     await User.findByIdAndUpdate(request.from, { $addToSet: { friends: req.user._id } });
 
+    const userName = `${req.user.firstName} ${req.user.lastName}`.trim();
+
     await Notification.create({
         user: request.from,
-        text: `${req.user.name} elfogadta a barátkérelmedet`,
+        text: `${userName} elfogadta a barátkérelmedet`,
         type: 'friend'
     });
     io.to(request.from.toString()).emit('notification');
@@ -640,14 +648,14 @@ app.get('/api/notifications/unread', auth, async (req, res) => {
 
 app.get('/api/stories', auth, async (req, res) => {
     const stories = await Story.find({ expiresAt: { $gt: new Date() } })
-        .populate('author', 'name avatar')
+        .populate('author', 'firstName lastName username avatar')
         .sort({ createdAt: -1 });
     res.json(stories);
 });
 
 app.post('/api/stories', auth, async (req, res) => {
     const story = await Story.create({ author: req.user._id, image: req.body.image });
-    await story.populate('author', 'name avatar');
+    await story.populate('author', 'firstName lastName username avatar');
     io.emit('newStory', story);
     res.json(story);
 });
