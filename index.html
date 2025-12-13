@@ -114,8 +114,19 @@
 </head>
 <body class="bg-gray-100 dark:bg-dark-100 transition-colors duration-200">
 
+<!-- Loading Screen -->
+<div id="loadingScreen" class="fixed inset-0 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-700 flex items-center justify-center z-[200]">
+    <div class="text-center">
+        <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur mb-4 mx-auto animate-pulse">
+            <i class="fab fa-facebook text-white text-3xl"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-white">SocialBook</h1>
+        <p class="text-white/70 text-sm mt-2">Betöltés...</p>
+    </div>
+</div>
+
 <!-- ==================== AUTH PAGE ==================== -->
-<div id="authPage" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-700">
+<div id="authPage" class="hidden min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-700">
     <div class="w-full max-w-5xl flex flex-col lg:flex-row bg-white dark:bg-dark-200 rounded-2xl shadow-2xl overflow-hidden fade-in">
         <!-- Left Side -->
         <div class="lg:w-1/2 p-8 lg:p-12 bg-gradient-to-br from-blue-600 to-purple-700 text-white flex flex-col justify-center">
@@ -1094,7 +1105,8 @@ async function login() {
         token = data.token;
         currentUser = data.user;
         localStorage.setItem('token', token);
-        initApp();
+        await initApp();
+        navigate('feed');
         toast('Sikeres bejelentkezés!', 'success');
     } catch (e) {}
 }
@@ -1173,8 +1185,9 @@ async function register() {
         token = data.token;
         currentUser = data.user;
         localStorage.setItem('token', token);
-        initApp();
-        toast('Sikeres regisztráció!', 'success');
+        await initApp();
+        navigate('feed');
+        toast('Sikeres regisztráció! Üdvözlünk a SocialBook-on!', 'success');
     } catch (e) {}
 }
 
@@ -2672,18 +2685,41 @@ function handleURLRouting() {
     navigate('feed');
 }
 
-if (token) {
-    api('/auth/me').then(user => {
-        currentUser = user;
-        initApp().then(() => {
-            // URL routing kezelése bejelentkezés után
-            handleURLRouting();
-        });
-    }).catch(() => {
-        localStorage.removeItem('token');
-        token = null;
-    });
+// Loading screen elrejtése
+function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+        loadingScreen.style.opacity = '0';
+        loadingScreen.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => loadingScreen.remove(), 300);
+    }
 }
+
+// Alkalmazás inicializálása
+async function initializeApp() {
+    if (token) {
+        try {
+            const user = await api('/auth/me');
+            currentUser = user;
+            await initApp();
+            handleURLRouting();
+            hideLoadingScreen();
+        } catch (e) {
+            // Token érvénytelen, mutassuk a login oldalt
+            localStorage.removeItem('token');
+            token = null;
+            document.getElementById('authPage').classList.remove('hidden');
+            hideLoadingScreen();
+        }
+    } else {
+        // Nincs token, mutassuk a login oldalt
+        document.getElementById('authPage').classList.remove('hidden');
+        hideLoadingScreen();
+    }
+}
+
+// Indítás
+initializeApp();
 
 // Böngésző vissza/előre gomb kezelése
 window.addEventListener('popstate', () => {
