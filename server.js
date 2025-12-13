@@ -30,9 +30,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/socialboo
 
 // Felhasználó séma
 const userSchema = new mongoose.Schema({
-    firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
-    username: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    firstName: { type: String, default: '' },
+    lastName: { type: String, default: '' },
+    username: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     avatar: { type: String, default: '' },
@@ -41,7 +41,8 @@ const userSchema = new mongoose.Schema({
     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     isAdmin: { type: Boolean, default: false },
     isOnline: { type: Boolean, default: false },
-    lastSeen: { type: Date, default: Date.now }
+    lastSeen: { type: Date, default: Date.now },
+    lastUsernameChange: { type: Date, default: null }
 }, { timestamps: true });
 
 // Virtuális mező a teljes névhez
@@ -105,6 +106,57 @@ const FriendRequest = mongoose.model('FriendRequest', friendRequestSchema);
 const Notification = mongoose.model('Notification', notificationSchema);
 const Story = mongoose.model('Story', storySchema);
 
+// ============ RANDOM USERNAME GENERÁLÁS ============
+function generateRandomUsername(baseName = 'user') {
+    const cleanName = baseName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const random = Math.random().toString(36).substring(2, 8);
+    return `${cleanName}_${random}`;
+}
+
+// ============ RÉGI FELHASZNÁLÓK MIGRÁLÁSA ============
+async function migrateOldUsers() {
+    try {
+        // Felhasználók akiknek nincs username-jük
+        const usersWithoutUsername = await User.find({ 
+            $or: [
+                { username: { $exists: false } },
+                { username: null },
+                { username: '' }
+            ]
+        });
+        
+        for (const user of usersWithoutUsername) {
+            let newUsername;
+            let isUnique = false;
+            
+            // Generálunk egyedi username-et
+            while (!isUnique) {
+                const baseName = user.firstName || user.email.split('@')[0];
+                newUsername = generateRandomUsername(baseName);
+                const exists = await User.findOne({ username: newUsername });
+                if (!exists) isUnique = true;
+            }
+            
+            // Ha nincs firstName/lastName, generáljunk az emailből
+            if (!user.firstName || !user.lastName) {
+                const emailName = user.email.split('@')[0];
+                user.firstName = user.firstName || emailName.charAt(0).toUpperCase() + emailName.slice(1);
+                user.lastName = user.lastName || '';
+            }
+            
+            user.username = newUsername;
+            await user.save();
+            console.log(`✅ Migrálva: ${user.email} -> @${newUsername}`);
+        }
+        
+        if (usersWithoutUsername.length > 0) {
+            console.log(`✅ ${usersWithoutUsername.length} felhasználó migrálva!`);
+        }
+    } catch (error) {
+        console.error('Migráció hiba:', error);
+    }
+}
+
 // ============ ADMIN LÉTREHOZÁSA ============
 async function createAdmin() {
     const adminExists = await User.findOne({ email: process.env.ADMIN_EMAIL });
@@ -120,7 +172,19 @@ async function createAdmin() {
             isAdmin: true
         });
         console.log('✅ Admin felhasználó létrehozva!');
+    } else {
+        // Admin username frissítése ha kell
+        if (adminExists.username !== process.env.ADMIN_USERNAME) {
+            adminExists.username = process.env.ADMIN_USERNAME || 'admin';
+            adminExists.firstName = process.env.ADMIN_FIRSTNAME || adminExists.firstName || 'Admin';
+            adminExists.lastName = process.env.ADMIN_LASTNAME || adminExists.lastName || 'User';
+            await adminExists.save();
+            console.log('✅ Admin adatok frissítve!');
+        }
     }
+    
+    // Régi felhasználók migrálása
+    await migrateOldUsers();
 }
 createAdmin();
 
@@ -238,6 +302,10 @@ app.get('/api/users', auth, async (req, res) => {
 // Egy felhasználó ID alapján
 app.get('/api/users/:id', auth, async (req, res) => {
     try {
+        // Ellenőrizzük, hogy valid MongoDB ID-e
+        if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ error: 'Érvénytelen ID formátum!' });
+        }
         const user = await User.findById(req.params.id)
             .select('-password')
             .populate('friends', 'firstName lastName username avatar isOnline');
@@ -271,6 +339,48 @@ app.put('/api/users/profile', auth, async (req, res) => {
             { new: true }
         ).select('-password');
         res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Username módosítása (havonta egyszer)
+app.put('/api/users/username', auth, async (req, res) => {
+    try {
+        const { username } = req.body;
+        const user = await User.findById(req.user._id);
+        
+        // Ellenőrizzük, hogy eltelt-e 30 nap
+        if (user.lastUsernameChange) {
+            const daysSinceChange = (Date.now() - new Date(user.lastUsernameChange).getTime()) / (1000 * 60 * 60 * 24);
+            if (daysSinceChange < 30) {
+                const daysLeft = Math.ceil(30 - daysSinceChange);
+                return res.status(400).json({ 
+                    error: `Még ${daysLeft} napot kell várnod a következő felhasználónév váltásig!` 
+                });
+            }
+        }
+        
+        // Username formátum ellenőrzés
+        if (!/^[a-zA-Z0-9._]+$/.test(username)) {
+            return res.status(400).json({ error: 'A felhasználónév csak betűket, számokat, pontot és aláhúzást tartalmazhat!' });
+        }
+        
+        if (username.length < 3 || username.length > 30) {
+            return res.status(400).json({ error: 'A felhasználónév 3-30 karakter hosszú legyen!' });
+        }
+        
+        // Egyediség ellenőrzése
+        const exists = await User.findOne({ username: username.toLowerCase(), _id: { $ne: req.user._id } });
+        if (exists) {
+            return res.status(400).json({ error: 'Ez a felhasználónév már foglalt!' });
+        }
+        
+        user.username = username.toLowerCase();
+        user.lastUsernameChange = new Date();
+        await user.save();
+        
+        res.json({ ...user.toObject(), password: undefined });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
