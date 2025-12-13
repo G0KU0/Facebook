@@ -34,8 +34,8 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/socialboo
 const userSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
     lastName: { type: String, default: '' }, // Nem kötelező (tulajdonosnak lehet csak egy neve)
-    username: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
-    email: { type: String, required: true, unique: true },
+    username: { type: String, unique: true, required: true, lowercase: true, trim: true },
+    birthDate: { type: Date, default: null },
     password: { type: String, required: true },
     avatar: { type: String, default: '' },
     cover: { type: String, default: '' },
@@ -210,15 +210,16 @@ async function migrateOldUsers() {
 // ============ OWNER LÉTREHOZÁSA ============
 async function createOwner() {
     // Owner létrehozása (csak ő van az .env-ben, az adminokat ő nevezi ki)
-    const ownerExists = await User.findOne({ email: process.env.OWNER_EMAIL });
-    if (!ownerExists && process.env.OWNER_EMAIL) {
+    const ownerUsername = process.env.OWNER_USERNAME || 'owner';
+    const ownerExists = await User.findOne({ username: ownerUsername.toLowerCase() });
+    if (!ownerExists && process.env.OWNER_USERNAME) {
         const hashedPassword = await bcrypt.hash(process.env.OWNER_PASSWORD, 10);
         const ownerName = process.env.OWNER_FIRSTNAME || 'Owner';
         await User.create({
             firstName: ownerName,
             lastName: process.env.OWNER_LASTNAME || '', // Tulajdonosnak lehet üres
-            username: process.env.OWNER_USERNAME || 'owner',
-            email: process.env.OWNER_EMAIL,
+            username: ownerUsername.toLowerCase(),
+            birthDate: new Date('2000-01-01'), // Alapértelmezett dátum
             password: hashedPassword,
             avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(ownerName)}&background=f59e0b&color=fff&size=200`,
             isOwner: true,
@@ -229,7 +230,6 @@ async function createOwner() {
         // Owner adatok frissítése
         ownerExists.isOwner = true;
         ownerExists.isAdmin = true;
-        ownerExists.username = process.env.OWNER_USERNAME || ownerExists.username || 'owner';
         ownerExists.firstName = process.env.OWNER_FIRSTNAME || ownerExists.firstName || 'Owner';
         // Tulajdonosnak a vezetéknév opcionális - ha nincs megadva az env-ben, marad ami volt
         if (process.env.OWNER_LASTNAME !== undefined) {
@@ -270,7 +270,7 @@ const adminAuth = async (req, res, next) => {
 // Regisztráció
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { firstName, lastName, username, email, password } = req.body;
+        const { firstName, lastName, username, birthDate, password } = req.body;
         
         // Név ellenőrzés - kötelező mezők
         if (!firstName || !firstName.trim()) {
@@ -281,9 +281,22 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'A vezetéknév megadása kötelező!' });
         }
         
-        // Email ellenőrzés
-        const emailExists = await User.findOne({ email });
-        if (emailExists) return res.status(400).json({ error: 'Ez az email már foglalt!' });
+        // Születési dátum ellenőrzés
+        if (!birthDate) {
+            return res.status(400).json({ error: 'A születési dátum megadása kötelező!' });
+        }
+        
+        // Életkor ellenőrzés (minimum 13 év)
+        const birth = new Date(birthDate);
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const monthDiff = today.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+            age--;
+        }
+        if (age < 13) {
+            return res.status(400).json({ error: 'Minimum 13 éves kort kell betöltened a regisztrációhoz!' });
+        }
         
         // Username ellenőrzés
         const usernameExists = await User.findOne({ username: username.toLowerCase() });
@@ -303,7 +316,7 @@ app.post('/api/auth/register', async (req, res) => {
             firstName: firstName.trim(),
             lastName: lastName.trim(),
             username: username.toLowerCase(),
-            email,
+            birthDate: birth,
             password: hashedPassword,
             avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=random&size=200`
         });
@@ -328,12 +341,12 @@ app.get('/api/auth/check-username/:username', async (req, res) => {
 // Bejelentkezés
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ error: 'Hibás email vagy jelszó!' });
+        const { username, password } = req.body;
+        const user = await User.findOne({ username: username.toLowerCase() });
+        if (!user) return res.status(400).json({ error: 'Hibás felhasználónév vagy jelszó!' });
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ error: 'Hibás email vagy jelszó!' });
+        if (!isMatch) return res.status(400).json({ error: 'Hibás felhasználónév vagy jelszó!' });
 
         user.isOnline = true;
         await user.save();
