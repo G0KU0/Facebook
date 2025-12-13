@@ -810,6 +810,18 @@
                 </div>
             </div>
             
+            <!-- Születési dátum (csak ha még nincs megadva) -->
+            <div id="settingsBirthDateContainer" class="hidden">
+                <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
+                    <i class="fas fa-birthday-cake text-pink-500"></i> Születési dátum
+                </h4>
+                <div>
+                    <input type="date" id="settingsBirthDate" 
+                        class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-orange-500 mt-1 ml-1"><i class="fas fa-exclamation-triangle mr-1"></i>Figyelem: A születési dátum később nem módosítható!</p>
+                </div>
+            </div>
+            
             <!-- Kapcsolati állapot -->
             <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
                 <i class="fas fa-heart text-pink-500"></i> Kapcsolati állapot
@@ -2405,6 +2417,15 @@ function showSettings() {
     
     document.getElementById('userMenu').classList.add('hidden');
     
+    // Születési dátum - csak akkor jelenik meg ha még nincs beállítva
+    const birthDateContainer = document.getElementById('settingsBirthDateContainer');
+    if (!currentUser.birthDate) {
+        birthDateContainer.classList.remove('hidden');
+        document.getElementById('settingsBirthDate').value = '';
+    } else {
+        birthDateContainer.classList.add('hidden');
+    }
+    
     // Vezetéknév kötelező jelzés (tulajdonosnak nem kötelező)
     const lastNameRequired = document.getElementById('lastNameRequired');
     if (currentUser.isOwner) {
@@ -2513,6 +2534,12 @@ async function saveSettings() {
             }
         }
         
+        // Születési dátum (csak ha még nincs beállítva)
+        let birthDate = null;
+        if (!currentUser.birthDate) {
+            birthDate = document.getElementById('settingsBirthDate').value;
+        }
+        
         // Profil adatok mentése
         const data = await api('/users/profile', {
             method: 'PUT',
@@ -2528,7 +2555,8 @@ async function saveSettings() {
                 college: document.getElementById('settingsCollege').value,
                 currentCity: document.getElementById('settingsCurrentCity').value,
                 hometown: document.getElementById('settingsHometown').value,
-                relationship: document.getElementById('settingsRelationship').value
+                relationship: document.getElementById('settingsRelationship').value,
+                birthDate: birthDate
             })
         });
         currentUser = data;
