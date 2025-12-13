@@ -244,6 +244,19 @@ PORT=8080
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/socialbook
 ```
 
+### ImgBB képfeltöltés beállítása (ingyenes, korlátlan tárhely)
+
+A képek nem a MongoDB-ben tárolódnak, hanem az ImgBB ingyenes szolgáltatásán. Ez megakadályozza, hogy a MongoDB tárhely megteljen.
+
+1. **Regisztrálj** az [ImgBB](https://imgbb.com) oldalon
+2. **Szerezd meg az API kulcsot** itt: https://api.imgbb.com/
+3. **Másold be a `.env` fájlba:**
+```env
+IMGBB_API_KEY=your_actual_api_key_here
+```
+
+Ha nincs API kulcs beállítva, a rendszer automatikusan base64 formátumban menti a képeket (de ez több tárhelyet foglal).
+
 ---
 
 ## 🐛 Hibaelhárítás
