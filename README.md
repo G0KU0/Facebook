@@ -10,23 +10,41 @@ Egy modern, full-stack közösségi oldal MongoDB adatbázissal, Node.js szerver
 
 ### 👤 Felhasználók
 - Regisztráció és bejelentkezés (JWT autentikáció)
+- Egyedi **@felhasználónév** (havonta egyszer módosítható)
 - Profilkép és borítókép beállítása
-- Bemutatkozás szerkesztése
-- Online/Offline státusz jelzés
-- **Felhasználó keresés** név alapján
+- Részletes profil (munkahely, tanulmányok, lakóhely, kapcsolati állapot)
+- **Születési dátum és életkor** megjelenítése
+- Online/Offline státusz jelzés (zöld pont)
+- **Felhasználó keresés** név és username alapján
+- **Tulajdonos és Admin jelvények** a név mellett
 
 ### 📰 Hírfolyam
 - Posztok létrehozása szöveggel és képekkel
-- Lájkolás és kommentelés
+- **6 féle reakció**: 👍 Tetszik, ❤️ Szeretem, 😂 Haha, 😮 Wow, 😢 Szomorú, 😡 Mérges
+- **Poszt mentése** későbbre
+- **Poszt szerkesztése** (saját)
+- **@taggelés** a szövegben
+- Kommentelés
+- **Kép nagyítás** lightbox-ban
 - Valós idejű frissítések (Socket.io)
+
+### 🎂 Születésnapok
+- **Mai születésnaposok** megjelenítése a hírfolyamon
+- Értesítés a barátok születésnapjáról
+
+### 📅 Emlékek
+- **"X éve ezen a napon"** - régi posztjaid megjelenítése
+- Emlékek böngészése modal ablakban
 
 ### 💬 Messenger
 - **Külön Messenger oldal** teljes képernyős csevegéssel
-- **Lebegő chat ablakok** (Facebook stílusú, max 3 db)
-- Valós idejű üzenetküldés
+- **Lebegő chat ablakok** (Facebook stílusú, max 3 db) - sidebar mellett
+- Valós idejű üzenetküldés (48 óra után automatikusan törlődnek)
 - "Gépel..." indikátor
+- **Olvasottsági jelzés** (Elküldve / Elolvasva profilképpel)
 - Olvasatlan üzenetek jelzése
 - Üzenetek automatikusan megnyílnak új ablakban
+- **Csoportos beszélgetések** - több baráttal egyszerre
 
 ### 📞 Hívások
 - **Hanghívás** indítása
