@@ -30,8 +30,8 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/socialboo
 
 // Felhasználó séma
 const userSchema = new mongoose.Schema({
-    firstName: { type: String, default: '' },
-    lastName: { type: String, default: '' },
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
     username: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
@@ -39,6 +39,7 @@ const userSchema = new mongoose.Schema({
     cover: { type: String, default: '' },
     bio: { type: String, default: '' },
     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    isOwner: { type: Boolean, default: false },
     isAdmin: { type: Boolean, default: false },
     isOnline: { type: Boolean, default: false },
     lastSeen: { type: Date, default: Date.now },
@@ -157,36 +158,38 @@ async function migrateOldUsers() {
     }
 }
 
-// ============ ADMIN LÉTREHOZÁSA ============
-async function createAdmin() {
-    const adminExists = await User.findOne({ email: process.env.ADMIN_EMAIL });
-    if (!adminExists) {
-        const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+// ============ OWNER LÉTREHOZÁSA ============
+async function createOwner() {
+    // Owner létrehozása (csak ő van az .env-ben, az adminokat ő nevezi ki)
+    const ownerExists = await User.findOne({ email: process.env.OWNER_EMAIL });
+    if (!ownerExists && process.env.OWNER_EMAIL) {
+        const hashedPassword = await bcrypt.hash(process.env.OWNER_PASSWORD, 10);
         await User.create({
-            firstName: process.env.ADMIN_FIRSTNAME || 'Admin',
-            lastName: process.env.ADMIN_LASTNAME || 'User',
-            username: process.env.ADMIN_USERNAME || 'admin',
-            email: process.env.ADMIN_EMAIL,
+            firstName: process.env.OWNER_FIRSTNAME || 'Owner',
+            lastName: process.env.OWNER_LASTNAME || 'User',
+            username: process.env.OWNER_USERNAME || 'owner',
+            email: process.env.OWNER_EMAIL,
             password: hashedPassword,
-            avatar: `https://ui-avatars.com/api/?name=Admin&background=6366f1&color=fff&size=200`,
+            avatar: `https://ui-avatars.com/api/?name=Owner&background=f59e0b&color=fff&size=200`,
+            isOwner: true,
             isAdmin: true
         });
-        console.log('✅ Admin felhasználó létrehozva!');
-    } else {
-        // Admin username frissítése ha kell
-        if (adminExists.username !== process.env.ADMIN_USERNAME) {
-            adminExists.username = process.env.ADMIN_USERNAME || 'admin';
-            adminExists.firstName = process.env.ADMIN_FIRSTNAME || adminExists.firstName || 'Admin';
-            adminExists.lastName = process.env.ADMIN_LASTNAME || adminExists.lastName || 'User';
-            await adminExists.save();
-            console.log('✅ Admin adatok frissítve!');
-        }
+        console.log('✅ Tulajdonos felhasználó létrehozva!');
+    } else if (ownerExists) {
+        // Owner adatok frissítése
+        ownerExists.isOwner = true;
+        ownerExists.isAdmin = true;
+        ownerExists.username = process.env.OWNER_USERNAME || ownerExists.username || 'owner';
+        ownerExists.firstName = process.env.OWNER_FIRSTNAME || ownerExists.firstName || 'Owner';
+        ownerExists.lastName = process.env.OWNER_LASTNAME || ownerExists.lastName || 'User';
+        await ownerExists.save();
+        console.log('✅ Tulajdonos adatok frissítve!');
     }
     
     // Régi felhasználók migrálása
     await migrateOldUsers();
 }
-createAdmin();
+createOwner();
 
 // ============ JWT MIDDLEWARE ============
 const auth = async (req, res, next) => {
@@ -216,6 +219,14 @@ app.post('/api/auth/register', async (req, res) => {
     try {
         const { firstName, lastName, username, email, password } = req.body;
         
+        // Név ellenőrzés - kötelező mezők
+        if (!firstName || !firstName.trim()) {
+            return res.status(400).json({ error: 'A keresztnév megadása kötelező!' });
+        }
+        if (!lastName || !lastName.trim()) {
+            return res.status(400).json({ error: 'A vezetéknév megadása kötelező!' });
+        }
+        
         // Email ellenőrzés
         const emailExists = await User.findOne({ email });
         if (emailExists) return res.status(400).json({ error: 'Ez az email már foglalt!' });
@@ -235,8 +246,8 @@ app.post('/api/auth/register', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.create({
-            firstName,
-            lastName,
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
             username: username.toLowerCase(),
             email,
             password: hashedPassword,
@@ -688,13 +699,45 @@ app.get('/api/admin/users', auth, adminAuth, async (req, res) => {
 
 app.delete('/api/admin/users/:id', auth, adminAuth, async (req, res) => {
     const user = await User.findById(req.params.id);
-    if (user.isAdmin) return res.status(403).json({ error: 'Admin nem törölhető!' });
+    if (!user) return res.status(404).json({ error: 'Felhasználó nem található!' });
+    if (user.isOwner) return res.status(403).json({ error: 'A tulajdonos nem törölhető!' });
+    
+    // Csak a tulajdonos törölhet admint
+    if (user.isAdmin && !req.user.isOwner) {
+        return res.status(403).json({ error: 'Csak a tulajdonos törölhet admint!' });
+    }
     
     await Post.deleteMany({ author: req.params.id });
     await Message.deleteMany({ $or: [{ from: req.params.id }, { to: req.params.id }] });
+    await FriendRequest.deleteMany({ $or: [{ from: req.params.id }, { to: req.params.id }] });
+    await Notification.deleteMany({ user: req.params.id });
+    await Story.deleteMany({ author: req.params.id });
     await user.deleteOne();
     
     res.json({ message: 'Felhasználó törölve!' });
+});
+
+// Admin jogosultság adása/elvétele (csak Owner)
+app.post('/api/admin/toggle-admin/:id', auth, async (req, res) => {
+    try {
+        if (!req.user.isOwner) {
+            return res.status(403).json({ error: 'Csak a tulajdonos adhat admin jogot!' });
+        }
+        
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ error: 'Felhasználó nem található!' });
+        if (user.isOwner) return res.status(403).json({ error: 'A tulajdonos jogai nem módosíthatók!' });
+        
+        user.isAdmin = !user.isAdmin;
+        await user.save();
+        
+        res.json({ 
+            message: user.isAdmin ? 'Admin jog megadva!' : 'Admin jog elvéve!',
+            user: { ...user.toObject(), password: undefined }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // ============ SOCKET.IO ============
