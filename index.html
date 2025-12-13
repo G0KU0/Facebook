@@ -475,18 +475,31 @@
                         <div class="ml-36 md:ml-48 pt-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
                             <div>
                                 <h1 id="profileName" class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white inline-flex items-center flex-wrap gap-2"></h1>
-                                <div id="profileBadge" class="mt-1"></div>
                                 <p id="profileUsername" class="text-blue-500 hover:underline cursor-pointer text-sm font-medium mt-1">@username</p>
                                 <p id="profileFriendCount" class="text-gray-500 font-medium mt-1"></p>
                             </div>
-                            <div id="profileActions" class="flex gap-2"></div>
+                            <div id="profileActions" class="flex gap-2 flex-wrap"></div>
                         </div>
                         <p id="profileBio" class="mt-4 text-gray-600 dark:text-gray-400 md:ml-48"></p>
                     </div>
                 </div>
             </div>
-            <div class="max-w-xl mx-auto px-4 py-6">
-                <div id="profilePosts" class="space-y-4"></div>
+            
+            <div class="max-w-4xl mx-auto px-4 py-6">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- Bal oldali info panel -->
+                    <div class="md:w-80 flex-shrink-0">
+                        <div id="profileInfoCard" class="bg-white dark:bg-dark-200 rounded-xl shadow p-4 sticky top-20">
+                            <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-4">Bemutatkozás</h3>
+                            <div id="profileInfoContent" class="space-y-3 text-sm"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Jobb oldali posztok -->
+                    <div class="flex-1">
+                        <div id="profilePosts" class="space-y-4"></div>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -659,7 +672,7 @@
 
 <!-- Settings Modal -->
 <div id="settingsModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-md shadow-2xl slide-up max-h-[90vh] overflow-y-auto">
+    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-lg shadow-2xl slide-up max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300 sticky top-0 bg-white dark:bg-dark-200">
             <h3 class="text-xl font-bold text-gray-800 dark:text-white">Beállítások</h3>
             <button onclick="closeSettings()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
@@ -667,13 +680,17 @@
             </button>
         </div>
         <div class="p-4 space-y-4">
+            <!-- Alapadatok -->
+            <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                <i class="fas fa-user text-blue-500"></i> Alapadatok
+            </h4>
             <div class="flex gap-3">
                 <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Keresztnév</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Keresztnév *</label>
                     <input type="text" id="settingsFirstName" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vezetéknév</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vezetéknév <span id="lastNameRequired">*</span></label>
                     <input type="text" id="settingsLastName" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
@@ -688,6 +705,11 @@
                 </div>
                 <p id="usernameChangeHint" class="text-xs text-gray-500 mt-1"></p>
             </div>
+            
+            <!-- Profilképek -->
+            <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
+                <i class="fas fa-image text-green-500"></i> Profilképek
+            </h4>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profilkép URL</label>
                 <input type="text" id="settingsAvatar" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://example.com/kep.jpg">
@@ -696,9 +718,69 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Borítókép URL</label>
                 <input type="text" id="settingsCover" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://example.com/borito.jpg">
             </div>
+            
+            <!-- Bemutatkozás -->
+            <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
+                <i class="fas fa-info-circle text-purple-500"></i> Bemutatkozás
+            </h4>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bemutatkozás</label>
-                <textarea id="settingsBio" rows="3" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Írj magadról pár szót..."></textarea>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rövid bemutatkozás</label>
+                <textarea id="settingsBio" rows="2" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Írj magadról pár szót..."></textarea>
+            </div>
+            
+            <!-- Munka és tanulmányok -->
+            <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
+                <i class="fas fa-briefcase text-orange-500"></i> Munka és tanulmányok
+            </h4>
+            <div class="flex gap-3">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Munkahely</label>
+                    <input type="text" id="settingsWorkplace" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="Cég neve">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Munkakör</label>
+                    <input type="text" id="settingsJobTitle" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="Pozíció">
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Középiskola</label>
+                    <input type="text" id="settingsSchool" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="Iskola neve">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Egyetem/Főiskola</label>
+                    <input type="text" id="settingsCollege" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="Egyetem neve">
+                </div>
+            </div>
+            
+            <!-- Lakóhely -->
+            <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
+                <i class="fas fa-map-marker-alt text-red-500"></i> Lakóhely
+            </h4>
+            <div class="flex gap-3">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jelenlegi város</label>
+                    <input type="text" id="settingsCurrentCity" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="Budapest">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Szülőváros</label>
+                    <input type="text" id="settingsHometown" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="Debrecen">
+                </div>
+            </div>
+            
+            <!-- Kapcsolati állapot -->
+            <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
+                <i class="fas fa-heart text-pink-500"></i> Kapcsolati állapot
+            </h4>
+            <div>
+                <select id="settingsRelationship" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Nincs megadva</option>
+                    <option value="single">Egyedülálló</option>
+                    <option value="in_relationship">Kapcsolatban</option>
+                    <option value="engaged">Jegyben</option>
+                    <option value="married">Házas</option>
+                    <option value="complicated">Bonyolult</option>
+                </select>
             </div>
         </div>
         <div class="p-4 border-t border-gray-200 dark:border-dark-300 sticky bottom-0 bg-white dark:bg-dark-200">
@@ -1879,6 +1961,17 @@ async function declineFriend(requestId) {
 // ============ PROFILE ============
 let currentProfileId = null;
 
+function getRelationshipText(status) {
+    const texts = {
+        'single': 'Egyedülálló',
+        'in_relationship': 'Kapcsolatban',
+        'engaged': 'Jegyben',
+        'married': 'Házas',
+        'complicated': 'Bonyolult'
+    };
+    return texts[status] || '';
+}
+
 async function loadProfile(userIdOrUsername) {
     try {
         let user;
@@ -1900,18 +1993,83 @@ async function loadProfile(userIdOrUsername) {
         
         document.getElementById('profileAvatar').src = getAvatar(user);
         document.getElementById('profileCover').src = user.cover || '';
-        document.getElementById('profileName').textContent = getUserName(user);
-        document.getElementById('profileBadge').innerHTML = getUserBadge(user, 'lg');
+        
+        // Név és jelvény együtt
+        const nameEl = document.getElementById('profileName');
+        nameEl.innerHTML = `${getUserName(user)}${getUserBadge(user, 'lg')}`;
+        
         document.getElementById('profileUsername').textContent = `@${user.username || 'user'}`;
         document.getElementById('profileFriendCount').textContent = `${user.friends?.length || 0} barát`;
         document.getElementById('profileBio').textContent = user.bio || '';
+        
+        // Info panel feltöltése
+        const infoContent = document.getElementById('profileInfoContent');
+        let infoHTML = '';
+        
+        if (user.bio) {
+            infoHTML += `<p class="text-gray-600 dark:text-gray-400 text-center pb-3 border-b border-gray-100 dark:border-dark-300">${user.bio}</p>`;
+        }
+        
+        if (user.workplace) {
+            infoHTML += `
+                <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-briefcase w-5 text-gray-400"></i>
+                    <span>${user.jobTitle ? user.jobTitle + ' - ' : ''}${user.workplace}</span>
+                </div>`;
+        }
+        
+        if (user.college) {
+            infoHTML += `
+                <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-graduation-cap w-5 text-gray-400"></i>
+                    <span>Tanult: ${user.college}</span>
+                </div>`;
+        }
+        
+        if (user.school) {
+            infoHTML += `
+                <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-school w-5 text-gray-400"></i>
+                    <span>Tanult: ${user.school}</span>
+                </div>`;
+        }
+        
+        if (user.currentCity) {
+            infoHTML += `
+                <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-home w-5 text-gray-400"></i>
+                    <span>Lakóhely: ${user.currentCity}</span>
+                </div>`;
+        }
+        
+        if (user.hometown) {
+            infoHTML += `
+                <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-map-marker-alt w-5 text-gray-400"></i>
+                    <span>Szülőváros: ${user.hometown}</span>
+                </div>`;
+        }
+        
+        if (user.relationship) {
+            infoHTML += `
+                <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-heart w-5 text-gray-400"></i>
+                    <span>${getRelationshipText(user.relationship)}</span>
+                </div>`;
+        }
+        
+        if (!infoHTML) {
+            infoHTML = '<p class="text-gray-500 text-center">Nincs megadva információ</p>';
+        }
+        
+        infoContent.innerHTML = infoHTML;
         
         // URL frissítése username-re (csak ha még nem ott vagyunk)
         if (user.username && window.location.pathname !== `/${user.username}`) {
             window.history.pushState({}, '', `/${user.username}`);
         }
         
-        // Actions
+        // Actions - barát státusz lekérése
         const actions = document.getElementById('profileActions');
         if (userId === currentUser._id) {
             actions.innerHTML = `
@@ -1920,13 +2078,48 @@ async function loadProfile(userIdOrUsername) {
                 </button>
             `;
         } else {
-            const isFriend = currentUser.friends?.some(f => f._id === userId || f === userId);
+            // Barát státusz lekérése
+            const friendStatus = await api(`/friends/status/${userId}`);
+            let friendButton = '';
+            
+            switch (friendStatus.status) {
+                case 'friends':
+                    friendButton = `
+                        <button onclick="removeFriend('${userId}')" class="px-4 py-2 bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 transition group">
+                            <i class="fas fa-user-check mr-2 group-hover:hidden"></i>
+                            <i class="fas fa-user-minus mr-2 hidden group-hover:inline"></i>
+                            <span class="group-hover:hidden">Barátok</span>
+                            <span class="hidden group-hover:inline">Barátság törlése</span>
+                        </button>
+                    `;
+                    break;
+                case 'request_sent':
+                    friendButton = `
+                        <button onclick="cancelFriendRequest('${userId}')" class="px-4 py-2 bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 transition">
+                            <i class="fas fa-user-clock mr-2"></i>Kérelem elküldve
+                        </button>
+                    `;
+                    break;
+                case 'request_received':
+                    friendButton = `
+                        <button onclick="acceptFriend('${friendStatus.requestId}')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition">
+                            <i class="fas fa-user-check mr-2"></i>Elfogadás
+                        </button>
+                        <button onclick="declineFriend('${friendStatus.requestId}')" class="px-4 py-2 bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-dark-400 transition">
+                            <i class="fas fa-times mr-2"></i>Elutasítás
+                        </button>
+                    `;
+                    break;
+                default:
+                    friendButton = `
+                        <button onclick="sendFriendRequest('${userId}')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition">
+                            <i class="fas fa-user-plus mr-2"></i>Barátnak jelölés
+                        </button>
+                    `;
+            }
+            
             actions.innerHTML = `
-                ${!isFriend ? `
-                    <button onclick="sendFriendRequest('${userId}')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition">
-                        <i class="fas fa-user-plus mr-2"></i>Barátnak jelölés
-                    </button>
-                ` : ''}
+                ${friendButton}
                 <button onclick="openChatWindow('${userId}')" class="px-4 py-2 bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-dark-400 transition">
                     <i class="fab fa-facebook-messenger mr-2"></i>Üzenet
                 </button>
@@ -1938,6 +2131,24 @@ async function loadProfile(userIdOrUsername) {
         toast('Felhasználó nem található!', 'error');
         navigate('feed');
     }
+}
+
+async function cancelFriendRequest(userId) {
+    try {
+        await api(`/friends/request/${userId}`, { method: 'DELETE' });
+        toast('Barátkérelem visszavonva!', 'info');
+        loadProfile(userId);
+    } catch (e) {}
+}
+
+async function removeFriend(userId) {
+    if (!confirm('Biztosan törlöd a barátságot?')) return;
+    try {
+        await api(`/friends/${userId}`, { method: 'DELETE' });
+        currentUser = await api('/auth/me');
+        toast('Barátság törölve!', 'info');
+        loadProfile(userId);
+    } catch (e) {}
 }
 
 // ============ NOTIFICATIONS ============
@@ -1979,7 +2190,27 @@ function showSettings() {
     document.getElementById('settingsAvatar').value = currentUser.avatar || '';
     document.getElementById('settingsCover').value = currentUser.cover || '';
     document.getElementById('settingsBio').value = currentUser.bio || '';
+    
+    // Új mezők
+    document.getElementById('settingsWorkplace').value = currentUser.workplace || '';
+    document.getElementById('settingsJobTitle').value = currentUser.jobTitle || '';
+    document.getElementById('settingsSchool').value = currentUser.school || '';
+    document.getElementById('settingsCollege').value = currentUser.college || '';
+    document.getElementById('settingsCurrentCity').value = currentUser.currentCity || '';
+    document.getElementById('settingsHometown').value = currentUser.hometown || '';
+    document.getElementById('settingsRelationship').value = currentUser.relationship || '';
+    
     document.getElementById('userMenu').classList.add('hidden');
+    
+    // Vezetéknév kötelező jelzés (tulajdonosnak nem kötelező)
+    const lastNameRequired = document.getElementById('lastNameRequired');
+    if (currentUser.isOwner) {
+        lastNameRequired.textContent = '(opcionális)';
+        lastNameRequired.className = 'text-gray-400 text-xs';
+    } else {
+        lastNameRequired.textContent = '*';
+        lastNameRequired.className = '';
+    }
     
     // Ellenőrizzük, hogy változtatható-e a username
     const hint = document.getElementById('usernameChangeHint');
@@ -2051,6 +2282,18 @@ function closeSettings() {
 
 async function saveSettings() {
     try {
+        const firstName = document.getElementById('settingsFirstName').value.trim();
+        const lastName = document.getElementById('settingsLastName').value.trim();
+        
+        // Ellenőrzések
+        if (!firstName) {
+            return toast('A keresztnév megadása kötelező!', 'error');
+        }
+        
+        if (!currentUser.isOwner && !lastName) {
+            return toast('A vezetéknév megadása kötelező!', 'error');
+        }
+        
         const newUsername = document.getElementById('settingsUsername').value.trim();
         
         // Ha a username változott és változtatható
@@ -2071,11 +2314,18 @@ async function saveSettings() {
         const data = await api('/users/profile', {
             method: 'PUT',
             body: JSON.stringify({
-                firstName: document.getElementById('settingsFirstName').value,
-                lastName: document.getElementById('settingsLastName').value,
+                firstName,
+                lastName,
                 avatar: document.getElementById('settingsAvatar').value,
                 cover: document.getElementById('settingsCover').value,
-                bio: document.getElementById('settingsBio').value
+                bio: document.getElementById('settingsBio').value,
+                workplace: document.getElementById('settingsWorkplace').value,
+                jobTitle: document.getElementById('settingsJobTitle').value,
+                school: document.getElementById('settingsSchool').value,
+                college: document.getElementById('settingsCollege').value,
+                currentCity: document.getElementById('settingsCurrentCity').value,
+                hometown: document.getElementById('settingsHometown').value,
+                relationship: document.getElementById('settingsRelationship').value
             })
         });
         currentUser = data;
