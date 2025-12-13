@@ -474,8 +474,9 @@
                         </div>
                         <div class="ml-36 md:ml-48 pt-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
                             <div>
-                                <h1 id="profileName" class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white"></h1>
-                                <p id="profileUsername" class="text-blue-500 hover:underline cursor-pointer text-sm font-medium">@username</p>
+                                <h1 id="profileName" class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white inline-flex items-center flex-wrap gap-2"></h1>
+                                <div id="profileBadge" class="mt-1"></div>
+                                <p id="profileUsername" class="text-blue-500 hover:underline cursor-pointer text-sm font-medium mt-1">@username</p>
                                 <p id="profileFriendCount" class="text-gray-500 font-medium mt-1"></p>
                             </div>
                             <div id="profileActions" class="flex gap-2"></div>
@@ -810,6 +811,22 @@ function getUserName(user) {
         return `${user.firstName || ''} ${user.lastName || ''}`.trim();
     }
     return user.username || 'Ismeretlen';
+}
+
+function getUserBadge(user, size = 'sm') {
+    if (!user) return '';
+    const sizeClass = size === 'lg' ? 'text-xs px-2 py-1' : 'text-[10px] px-1.5 py-0.5';
+    if (user.isOwner) {
+        return `<span class="inline-flex items-center gap-1 ${sizeClass} bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full font-semibold ml-1">
+            <i class="fas fa-crown text-[8px]"></i>Tulajdonos
+        </span>`;
+    }
+    if (user.isAdmin) {
+        return `<span class="inline-flex items-center gap-1 ${sizeClass} bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full font-semibold ml-1">
+            <i class="fas fa-shield-alt text-[8px]"></i>Admin
+        </span>`;
+    }
+    return '';
 }
 
 // ============ AUTH ============
@@ -1187,8 +1204,9 @@ function renderPosts(posts, containerId) {
     
     container.innerHTML = posts.map(post => {
         const liked = post.likes.includes(currentUser._id);
-        const canDelete = post.author._id === currentUser._id || currentUser.isAdmin;
+        const canDelete = post.author._id === currentUser._id || currentUser.isAdmin || currentUser.isOwner;
         const authorName = getUserName(post.author);
+        const authorBadge = getUserBadge(post.author);
         
         return `
             <div class="bg-white dark:bg-dark-200 rounded-xl shadow slide-up">
@@ -1196,7 +1214,7 @@ function renderPosts(posts, containerId) {
                     <div class="flex items-center gap-3">
                         <img src="${getAvatar(post.author)}" class="w-10 h-10 rounded-full cursor-pointer hover:brightness-95 transition" onclick="navigateToProfile('${post.author.username || post.author._id}')">
                         <div class="flex-1">
-                            <p class="font-semibold text-gray-800 dark:text-white text-sm cursor-pointer hover:underline" onclick="navigateToProfile('${post.author.username || post.author._id}')">${authorName}</p>
+                            <p class="font-semibold text-gray-800 dark:text-white text-sm cursor-pointer hover:underline inline-flex items-center flex-wrap" onclick="navigateToProfile('${post.author.username || post.author._id}')">${authorName}${authorBadge}</p>
                             <p class="text-xs text-gray-500">${timeAgo(post.createdAt)} · <i class="fas fa-globe-americas"></i></p>
                         </div>
                         ${canDelete ? `
@@ -1236,11 +1254,12 @@ function renderPosts(posts, containerId) {
                 <div class="p-4">
                     ${post.comments.slice(-3).map(c => {
                         const commentAuthorName = getUserName(c.author);
+                        const commentBadge = getUserBadge(c.author);
                         return `
                             <div class="flex gap-2 mb-2">
                                 <img src="${getAvatar(c.author)}" class="w-8 h-8 rounded-full">
                                 <div class="bg-gray-100 dark:bg-dark-300 rounded-2xl px-3 py-2">
-                                    <p class="font-semibold text-xs text-gray-800 dark:text-white">${commentAuthorName}</p>
+                                    <p class="font-semibold text-xs text-gray-800 dark:text-white inline-flex items-center flex-wrap">${commentAuthorName}${commentBadge}</p>
                                     <p class="text-sm text-gray-700 dark:text-gray-300">${c.text}</p>
                                 </div>
                             </div>
@@ -1882,6 +1901,7 @@ async function loadProfile(userIdOrUsername) {
         document.getElementById('profileAvatar').src = getAvatar(user);
         document.getElementById('profileCover').src = user.cover || '';
         document.getElementById('profileName').textContent = getUserName(user);
+        document.getElementById('profileBadge').innerHTML = getUserBadge(user, 'lg');
         document.getElementById('profileUsername').textContent = `@${user.username || 'user'}`;
         document.getElementById('profileFriendCount').textContent = `${user.friends?.length || 0} barát`;
         document.getElementById('profileBio').textContent = user.bio || '';
@@ -2080,23 +2100,59 @@ async function loadAdmin() {
         document.getElementById('adminPosts').textContent = stats.posts;
         document.getElementById('adminMessages').textContent = stats.messages;
         
-        document.getElementById('adminUserList').innerHTML = users.map(u => `
-            <div class="flex items-center gap-4 p-3 bg-gray-50 dark:bg-dark-300 rounded-xl">
-                <img src="${getAvatar(u)}" class="w-10 h-10 rounded-full">
-                <div class="flex-1">
-                    <p class="font-semibold text-gray-800 dark:text-white text-sm">
-                        ${u.name}
-                        ${u.isAdmin ? '<span class="ml-2 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-600 px-2 py-0.5 rounded-full">Admin</span>' : ''}
-                    </p>
-                    <p class="text-xs text-gray-500">${u.email}</p>
+        document.getElementById('adminUserList').innerHTML = users.map(u => {
+            const userName = getUserName(u);
+            let badge = '';
+            if (u.isOwner) {
+                badge = '<span class="ml-2 text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-crown mr-1"></i>Tulajdonos</span>';
+            } else if (u.isAdmin) {
+                badge = '<span class="ml-2 text-xs bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-shield-alt mr-1"></i>Admin</span>';
+            }
+            
+            // Törlés: owner mindent törölhet (kivéve magát), admin csak nem-admint
+            const canDelete = !u.isOwner && (currentUser.isOwner || !u.isAdmin);
+            
+            // Admin jog: csak owner adhat/vehet el
+            const canToggleAdmin = currentUser.isOwner && !u.isOwner;
+            
+            return `
+                <div class="flex items-center gap-4 p-3 bg-gray-50 dark:bg-dark-300 rounded-xl">
+                    <img src="${getAvatar(u)}" class="w-10 h-10 rounded-full cursor-pointer" onclick="navigateToProfile('${u.username || u._id}')">
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 dark:text-white text-sm cursor-pointer hover:underline" onclick="navigateToProfile('${u.username || u._id}')">
+                            ${userName}${badge}
+                        </p>
+                        <p class="text-xs text-gray-500">${u.email} · @${u.username || 'user'}</p>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        ${canToggleAdmin ? `
+                            <button onclick="toggleAdmin('${u._id}', ${u.isAdmin})" class="px-3 py-1.5 rounded-lg text-xs font-medium transition ${u.isAdmin 
+                                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 hover:bg-red-200 dark:hover:bg-red-900/50' 
+                                : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 hover:bg-purple-200 dark:hover:bg-purple-900/50'}">
+                                <i class="fas fa-${u.isAdmin ? 'user-minus' : 'user-shield'} mr-1"></i>
+                                ${u.isAdmin ? 'Admin elvétele' : 'Admin adása'}
+                            </button>
+                        ` : ''}
+                        ${canDelete ? `
+                            <button onclick="deleteUser('${u._id}')" class="w-8 h-8 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center transition" title="Törlés">
+                                <i class="fas fa-trash text-red-500 text-sm"></i>
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
-                ${!u.isAdmin ? `
-                    <button onclick="deleteUser('${u._id}')" class="w-8 h-8 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center transition">
-                        <i class="fas fa-trash text-red-500 text-sm"></i>
-                    </button>
-                ` : ''}
-            </div>
-        `).join('');
+            `;
+        }).join('');
+    } catch (e) {}
+}
+
+async function toggleAdmin(userId, currentlyAdmin) {
+    const action = currentlyAdmin ? 'elvenni' : 'adni';
+    if (!confirm(`Biztosan szeretnéd ${action} az admin jogot?`)) return;
+    
+    try {
+        const result = await api(`/admin/toggle-admin/${userId}`, { method: 'POST' });
+        toast(result.message, 'success');
+        loadAdmin();
     } catch (e) {}
 }
 
