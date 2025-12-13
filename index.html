@@ -98,6 +98,18 @@
         /* Active nav */
         .nav-active { color: #2563eb; border-bottom: 3px solid #2563eb; }
         .dark .nav-active { color: #3b82f6; border-color: #3b82f6; }
+        
+        /* Chat windows positioning - sidebar mellett */
+        #chatWindowsContainer {
+            transition: right 0.2s ease;
+        }
+        
+        /* Ha nincs sidebar (kisebb képernyő) */
+        @media (max-width: 1023px) {
+            #chatWindowsContainer {
+                right: 1rem !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-dark-100 transition-colors duration-200">
@@ -323,7 +335,7 @@
     </nav>
 
     <!-- Right Sidebar - Friends List (Fixed) -->
-    <aside id="rightSidebar" class="fixed right-0 top-14 w-72 h-[calc(100vh-3.5rem)] bg-white dark:bg-dark-200 border-l border-gray-200 dark:border-dark-300 hidden lg:block overflow-y-auto z-30">
+    <aside id="rightSidebar" class="fixed right-0 top-14 w-72 h-[calc(100vh-3.5rem)] bg-white dark:bg-dark-200 border-l border-gray-200 dark:border-dark-300 hidden lg:block overflow-y-auto z-50">
         <div class="p-4">
             <!-- Csoportok -->
             <div class="mb-6">
@@ -598,7 +610,7 @@
     </main>
     
     <!-- ========== FLOATING CHAT WINDOWS ========== -->
-    <div id="chatWindowsContainer" class="fixed bottom-0 right-4 flex items-end gap-2 z-40"></div>
+    <div id="chatWindowsContainer" class="fixed bottom-0 right-[304px] flex items-end gap-2 z-40"></div>
     
 </div>
 
