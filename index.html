@@ -1029,6 +1029,21 @@ function getUserBadge(user, size = 'sm') {
     return '';
 }
 
+// Kép feltöltése ImgBB-re (ingyenes, korlátlan tárhely)
+async function uploadImage(base64Image) {
+    try {
+        const result = await api('/upload', {
+            method: 'POST',
+            body: JSON.stringify({ image: base64Image })
+        });
+        return result.url;
+    } catch (error) {
+        console.error('Képfeltöltés hiba:', error);
+        // Fallback: eredeti base64 visszaadása
+        return base64Image;
+    }
+}
+
 // ============ AUTH ============
 function showLogin() {
     document.getElementById('loginForm').classList.remove('hidden');
@@ -1565,9 +1580,15 @@ async function createPost() {
     }
     
     try {
+        let imageUrl = '';
+        if (hasImage) {
+            toast('Kép feltöltése...', 'info');
+            imageUrl = await uploadImage(imageEl.src);
+        }
+        
         await api('/posts', {
             method: 'POST',
-            body: JSON.stringify({ content, image: hasImage ? imageEl.src : '' })
+            body: JSON.stringify({ content, image: imageUrl })
         });
         closePostModal();
         toast('Bejegyzés közzétéve!', 'success');
@@ -1614,9 +1635,12 @@ async function createStory() {
     }
     
     try {
+        toast('Kép feltöltése...', 'info');
+        const imageUrl = await uploadImage(image);
+        
         await api('/stories', {
             method: 'POST',
-            body: JSON.stringify({ image })
+            body: JSON.stringify({ image: imageUrl })
         });
         closeStoryModal();
         loadStories();
