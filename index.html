@@ -88,6 +88,33 @@
         }
         .ripple::after { animation-delay: 0.5s; }
         
+        /* Reakciók */
+        .reactions-popup {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: white;
+            border-radius: 30px;
+            padding: 5px 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            margin-bottom: 5px;
+            z-index: 100;
+        }
+        .dark .reactions-popup { background: #3a3b3c; }
+        .reaction-btn-container:hover .reactions-popup { display: flex; }
+        .reaction-icon {
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            padding: 4px;
+        }
+        .reaction-icon:hover { transform: scale(1.3) translateY(-3px); }
+        
+        /* Olvasva jelzés */
+        .read-receipt { font-size: 10px; color: #65676b; }
+        .read-receipt.seen { color: #0084ff; }
+        
         /* Button hover */
         .btn-hover { transition: all 0.2s ease; }
         .btn-hover:hover { transform: translateY(-1px); }
@@ -386,6 +413,32 @@
                     <div id="storiesContainer" class="flex gap-3 overflow-x-auto pb-2"></div>
                 </div>
                 
+                <!-- Születésnapok -->
+                <div id="birthdayCard" class="hidden bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl p-4 mb-4 shadow text-white">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-birthday-cake text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold">Mai születésnaposok 🎉</h3>
+                            <p id="birthdayNames" class="text-sm text-white/90"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emlékek -->
+                <div id="memoriesCard" class="hidden bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl p-4 mb-4 shadow text-white cursor-pointer hover:opacity-95 transition">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-clock-rotate-left text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold">Emlékeid ezen a napon</h3>
+                            <p id="memoriesText" class="text-sm text-white/90"></p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Create Post -->
                 <div class="bg-white dark:bg-dark-200 rounded-xl p-4 mb-4 shadow">
                     <div class="flex items-center gap-3">
@@ -1427,8 +1480,91 @@ function toggleUserMenu() {
 
 // ============ FEED ============
 async function loadFeed() {
+    await loadBirthdays();
+    await loadMemories();
     await loadStories();
     await loadPosts();
+}
+
+// Mai születésnaposok betöltése
+async function loadBirthdays() {
+    try {
+        const today = new Date();
+        const todayMonth = today.getMonth();
+        const todayDay = today.getDate();
+        
+        const birthdayUsers = allUsers.filter(u => {
+            if (!u.birthDate) return false;
+            const bday = new Date(u.birthDate);
+            return bday.getMonth() === todayMonth && bday.getDate() === todayDay;
+        });
+        
+        const card = document.getElementById('birthdayCard');
+        if (birthdayUsers.length > 0) {
+            const names = birthdayUsers.map(u => getUserName(u)).join(', ');
+            document.getElementById('birthdayNames').textContent = 
+                birthdayUsers.length === 1 
+                    ? `${names} ma ünnepli a születésnapját! 🎂`
+                    : `${names} ma ünneplik a születésnapjukat! 🎂`;
+            card.classList.remove('hidden');
+        } else {
+            card.classList.add('hidden');
+        }
+    } catch (e) {}
+}
+
+// Emlékek betöltése (X éve ezen a napon)
+async function loadMemories() {
+    try {
+        const memories = await api('/posts/memories');
+        const card = document.getElementById('memoriesCard');
+        
+        if (memories && memories.length > 0) {
+            const years = Math.floor((Date.now() - new Date(memories[0].createdAt)) / (365.25 * 24 * 60 * 60 * 1000));
+            document.getElementById('memoriesText').textContent = `${years} éve ezen a napon osztottad meg ezt...`;
+            card.classList.remove('hidden');
+            card.onclick = () => openMemoriesModal(memories);
+        } else {
+            card.classList.add('hidden');
+        }
+    } catch (e) {
+        document.getElementById('memoriesCard').classList.add('hidden');
+    }
+}
+
+// Emlékek modal
+function openMemoriesModal(memories) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-dark-200 rounded-xl max-w-lg w-full max-h-[80vh] overflow-y-auto">
+            <div class="p-4 border-b border-gray-200 dark:border-dark-300 flex items-center justify-between sticky top-0 bg-white dark:bg-dark-200">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white">
+                    <i class="fas fa-clock-rotate-left text-blue-500 mr-2"></i>Emlékeid ezen a napon
+                </h3>
+                <button onclick="this.closest('.fixed').remove()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                    <i class="fas fa-times text-gray-500"></i>
+                </button>
+            </div>
+            <div class="p-4 space-y-4">
+                ${memories.map(post => {
+                    const years = Math.floor((Date.now() - new Date(post.createdAt)) / (365.25 * 24 * 60 * 60 * 1000));
+                    return `
+                        <div class="bg-gray-50 dark:bg-dark-300 rounded-xl p-4">
+                            <p class="text-blue-500 font-semibold text-sm mb-2">
+                                <i class="fas fa-calendar mr-1"></i>${years} éve
+                            </p>
+                            ${post.content ? `<p class="text-gray-800 dark:text-white mb-2">${post.content}</p>` : ''}
+                            ${post.image ? `<img src="${post.image}" class="w-full rounded-lg max-h-64 object-cover">` : ''}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
 
 async function loadStories() {
@@ -1481,65 +1617,122 @@ function renderPosts(posts, containerId) {
         return;
     }
     
+    const reactionIcons = {
+        like: { icon: '👍', color: 'bg-blue-500' },
+        love: { icon: '❤️', color: 'bg-red-500' },
+        haha: { icon: '😂', color: 'bg-yellow-500' },
+        wow: { icon: '😮', color: 'bg-yellow-500' },
+        sad: { icon: '😢', color: 'bg-yellow-500' },
+        angry: { icon: '😡', color: 'bg-orange-500' }
+    };
+    
     container.innerHTML = posts.map(post => {
-        const liked = post.likes.includes(currentUser._id);
+        // Reakciók összesítése
+        const reactions = post.reactions || {};
+        const myReaction = Object.keys(reactions).find(type => reactions[type]?.includes(currentUser._id));
+        const totalReactions = Object.values(reactions).reduce((sum, arr) => sum + (arr?.length || 0), 0) || post.likes?.length || 0;
+        const topReactions = Object.entries(reactions)
+            .filter(([_, arr]) => arr?.length > 0)
+            .sort((a, b) => b[1].length - a[1].length)
+            .slice(0, 3);
+        
         const canDelete = post.author._id === currentUser._id || currentUser.isAdmin || currentUser.isOwner;
+        const canEdit = post.author._id === currentUser._id;
+        const isSaved = post.savedBy?.includes(currentUser._id);
         const authorName = getUserName(post.author);
         const authorBadge = getUserBadge(post.author);
         
+        // Feeling/Activity megjelenítés
+        const feelingText = post.feeling ? ` – <span class="text-gray-500">érzés: ${post.feeling}</span>` : '';
+        
         return `
-            <div class="bg-white dark:bg-dark-200 rounded-xl shadow slide-up">
+            <div class="bg-white dark:bg-dark-200 rounded-xl shadow slide-up" id="post-${post._id}">
                 <div class="p-4">
                     <div class="flex items-center gap-3">
                         <img src="${getAvatar(post.author)}" class="w-10 h-10 rounded-full cursor-pointer hover:brightness-95 transition" onclick="navigateToProfile('${post.author.username || post.author._id}')">
                         <div class="flex-1">
-                            <p class="font-semibold text-gray-800 dark:text-white text-sm cursor-pointer hover:underline inline-flex items-center flex-wrap" onclick="navigateToProfile('${post.author.username || post.author._id}')">${authorName}${authorBadge}</p>
+                            <p class="font-semibold text-gray-800 dark:text-white text-sm cursor-pointer hover:underline inline-flex items-center flex-wrap" onclick="navigateToProfile('${post.author.username || post.author._id}')">${authorName}${authorBadge}${feelingText}</p>
                             <p class="text-xs text-gray-500">${timeAgo(post.createdAt)} · <i class="fas fa-globe-americas"></i></p>
                         </div>
-                        ${canDelete ? `
-                            <button onclick="deletePost('${post._id}')" class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center transition">
-                                <i class="fas fa-trash text-gray-400 hover:text-red-500 text-sm"></i>
+                        <div class="relative">
+                            <button onclick="togglePostMenu('${post._id}')" class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center transition">
+                                <i class="fas fa-ellipsis-h text-gray-400"></i>
                             </button>
-                        ` : ''}
+                            <div id="post-menu-${post._id}" class="hidden absolute right-0 top-10 w-48 bg-white dark:bg-dark-300 rounded-xl shadow-lg border border-gray-200 dark:border-dark-400 z-50">
+                                <button onclick="savePost('${post._id}')" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-dark-400 transition text-left rounded-t-xl">
+                                    <i class="fas fa-bookmark ${isSaved ? 'text-blue-500' : 'text-gray-500'}"></i>
+                                    <span class="text-gray-700 dark:text-gray-300 text-sm">${isSaved ? 'Mentés eltávolítása' : 'Poszt mentése'}</span>
+                                </button>
+                                ${canEdit ? `
+                                    <button onclick="editPost('${post._id}')" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-dark-400 transition text-left">
+                                        <i class="fas fa-edit text-gray-500"></i>
+                                        <span class="text-gray-700 dark:text-gray-300 text-sm">Szerkesztés</span>
+                                    </button>
+                                ` : ''}
+                                ${canDelete ? `
+                                    <button onclick="deletePost('${post._id}')" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-dark-400 transition text-left text-red-500 rounded-b-xl">
+                                        <i class="fas fa-trash"></i>
+                                        <span class="text-sm">Törlés</span>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
                     </div>
-                    ${post.content ? `<p class="mt-3 text-gray-800 dark:text-white whitespace-pre-line">${post.content}</p>` : ''}
+                    ${post.content ? `<p class="mt-3 text-gray-800 dark:text-white whitespace-pre-line">${formatPostContent(post.content)}</p>` : ''}
                 </div>
-                ${post.image ? `<img src="${post.image}" class="w-full max-h-[500px] object-cover">` : ''}
+                ${post.image ? `
+                    <div class="relative cursor-pointer" onclick="openImageModal('${post.image}')">
+                        <img src="${post.image}" class="w-full max-h-[500px] object-cover hover:brightness-95 transition">
+                    </div>
+                ` : ''}
                 <div class="px-4 py-2 flex items-center justify-between text-sm text-gray-500 border-b border-gray-100 dark:border-dark-300">
                     <div class="flex items-center gap-1">
-                        ${post.likes.length > 0 ? `
-                            <div class="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                                <i class="fas fa-thumbs-up text-white text-xs"></i>
+                        ${totalReactions > 0 ? `
+                            <div class="flex -space-x-1">
+                                ${topReactions.length > 0 
+                                    ? topReactions.map(([type]) => `<span class="text-base">${reactionIcons[type]?.icon || '👍'}</span>`).join('')
+                                    : `<span class="text-base">👍</span>`
+                                }
                             </div>
-                            <span>${post.likes.length}</span>
+                            <span class="ml-1">${totalReactions}</span>
                         ` : ''}
                     </div>
-                    <span>${post.comments.length} hozzászólás</span>
+                    <span>${post.comments?.length || 0} hozzászólás</span>
                 </div>
                 <div class="px-2 py-1 flex border-b border-gray-100 dark:border-dark-300">
-                    <button onclick="likePost('${post._id}')" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition ${liked ? 'text-blue-500' : 'text-gray-500'}">
-                        <i class="${liked ? 'fas' : 'far'} fa-thumbs-up"></i>
-                        <span class="font-medium text-sm">Tetszik</span>
-                    </button>
+                    <div class="flex-1 relative reaction-btn-container">
+                        <div class="reactions-popup gap-1">
+                            <span class="reaction-icon" onclick="reactToPost('${post._id}', 'like')" title="Tetszik">👍</span>
+                            <span class="reaction-icon" onclick="reactToPost('${post._id}', 'love')" title="Szeretem">❤️</span>
+                            <span class="reaction-icon" onclick="reactToPost('${post._id}', 'haha')" title="Haha">😂</span>
+                            <span class="reaction-icon" onclick="reactToPost('${post._id}', 'wow')" title="Wow">😮</span>
+                            <span class="reaction-icon" onclick="reactToPost('${post._id}', 'sad')" title="Szomorú">😢</span>
+                            <span class="reaction-icon" onclick="reactToPost('${post._id}', 'angry')" title="Mérges">😡</span>
+                        </div>
+                        <button onclick="reactToPost('${post._id}', 'like')" class="w-full flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition ${myReaction ? 'text-blue-500' : 'text-gray-500'}">
+                            ${myReaction ? `<span class="text-lg">${reactionIcons[myReaction]?.icon || '👍'}</span>` : '<i class="far fa-thumbs-up"></i>'}
+                            <span class="font-medium text-sm">${myReaction ? (myReaction === 'like' ? 'Tetszik' : myReaction === 'love' ? 'Szeretem' : myReaction === 'haha' ? 'Haha' : myReaction === 'wow' ? 'Wow' : myReaction === 'sad' ? 'Szomorú' : 'Mérges') : 'Tetszik'}</span>
+                        </button>
+                    </div>
                     <button onclick="document.getElementById('comment-${post._id}').focus()" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-500">
                         <i class="far fa-comment"></i>
                         <span class="font-medium text-sm">Hozzászólás</span>
                     </button>
-                    <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-500">
+                    <button onclick="sharePost('${post._id}')" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-500">
                         <i class="fas fa-share"></i>
                         <span class="font-medium text-sm">Megosztás</span>
                     </button>
                 </div>
                 <div class="p-4">
-                    ${post.comments.slice(-3).map(c => {
+                    ${(post.comments || []).slice(-3).map(c => {
                         const commentAuthorName = getUserName(c.author);
                         const commentBadge = getUserBadge(c.author);
                         return `
                             <div class="flex gap-2 mb-2">
-                                <img src="${getAvatar(c.author)}" class="w-8 h-8 rounded-full">
+                                <img src="${getAvatar(c.author)}" class="w-8 h-8 rounded-full cursor-pointer" onclick="navigateToProfile('${c.author.username || c.author._id}')">
                                 <div class="bg-gray-100 dark:bg-dark-300 rounded-2xl px-3 py-2">
-                                    <p class="font-semibold text-xs text-gray-800 dark:text-white inline-flex items-center flex-wrap">${commentAuthorName}${commentBadge}</p>
-                                    <p class="text-sm text-gray-700 dark:text-gray-300">${c.text}</p>
+                                    <p class="font-semibold text-xs text-gray-800 dark:text-white inline-flex items-center flex-wrap cursor-pointer hover:underline" onclick="navigateToProfile('${c.author.username || c.author._id}')">${commentAuthorName}${commentBadge}</p>
+                                    <p class="text-sm text-gray-700 dark:text-gray-300">${formatPostContent(c.text)}</p>
                                 </div>
                             </div>
                         `;
@@ -1556,9 +1749,102 @@ function renderPosts(posts, containerId) {
     }).join('');
 }
 
+// Poszt tartalom formázása (taggelés, linkek)
+function formatPostContent(text) {
+    if (!text) return '';
+    // @felhasználónév taggelés
+    text = text.replace(/@(\w+)/g, '<span class="text-blue-500 hover:underline cursor-pointer" onclick="navigateToProfile(\'$1\')">@$1</span>');
+    // Linkek
+    text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-blue-500 hover:underline">$1</a>');
+    return text;
+}
+
+// Poszt menü toggle
+function togglePostMenu(postId) {
+    const menu = document.getElementById(`post-menu-${postId}`);
+    // Zárjuk be az összes többi menüt
+    document.querySelectorAll('[id^="post-menu-"]').forEach(m => {
+        if (m.id !== `post-menu-${postId}`) m.classList.add('hidden');
+    });
+    menu.classList.toggle('hidden');
+}
+
+// Kattintásra menük bezárása
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('[id^="post-menu-"]') && !e.target.closest('[onclick*="togglePostMenu"]')) {
+        document.querySelectorAll('[id^="post-menu-"]').forEach(m => m.classList.add('hidden'));
+    }
+});
+
+// Reakció poszthoz
+async function reactToPost(postId, reactionType) {
+    try {
+        await api(`/posts/${postId}/react`, {
+            method: 'POST',
+            body: JSON.stringify({ reaction: reactionType })
+        });
+    } catch (e) {}
+}
+
+// Poszt mentése
+async function savePost(postId) {
+    try {
+        await api(`/posts/${postId}/save`, { method: 'POST' });
+        loadPosts();
+        toast('Poszt mentve!', 'success');
+    } catch (e) {}
+}
+
+// Poszt szerkesztése
+async function editPost(postId) {
+    const postEl = document.getElementById(`post-${postId}`);
+    const contentEl = postEl.querySelector('.whitespace-pre-line');
+    const currentContent = contentEl?.textContent || '';
+    
+    const newContent = prompt('Poszt szerkesztése:', currentContent);
+    if (newContent !== null && newContent !== currentContent) {
+        try {
+            await api(`/posts/${postId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ content: newContent })
+            });
+            toast('Poszt frissítve!', 'success');
+        } catch (e) {}
+    }
+    document.querySelectorAll('[id^="post-menu-"]').forEach(m => m.classList.add('hidden'));
+}
+
+// Poszt megosztása
+function sharePost(postId) {
+    const url = `${window.location.origin}/post/${postId}`;
+    if (navigator.share) {
+        navigator.share({ title: 'SocialBook poszt', url });
+    } else {
+        navigator.clipboard.writeText(url);
+        toast('Link vágólapra másolva!', 'success');
+    }
+}
+
+// Kép nagyítás
+function openImageModal(imageUrl) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 cursor-pointer';
+    modal.onclick = () => modal.remove();
+    modal.innerHTML = `
+        <img src="${imageUrl}" class="max-w-full max-h-full object-contain rounded-lg">
+        <button class="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white text-xl transition">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    document.body.appendChild(modal);
+}
+
 async function likePost(postId) {
     try {
-        await api(`/posts/${postId}/like`, { method: 'POST' });
+        await api(`/posts/${postId}/react`, { 
+            method: 'POST',
+            body: JSON.stringify({ reaction: 'like' })
+        });
     } catch (e) {}
 }
 
@@ -1811,16 +2097,33 @@ async function loadMessengerMessages(userId) {
     try {
         const messages = await api(`/messages/${userId}`);
         const container = document.getElementById('messengerMessages');
+        const user = allUsers.find(u => u._id === userId);
         
-        container.innerHTML = messages.map(m => `
-            <div class="flex ${m.from === currentUser._id ? 'justify-end' : 'justify-start'}">
-                <div class="${m.from === currentUser._id 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-4 py-2 max-w-xs lg:max-w-md">
-                    ${m.text}
+        container.innerHTML = messages.map((m, idx) => {
+            const isMe = m.from === currentUser._id;
+            const isLast = idx === messages.length - 1;
+            const showReadReceipt = isMe && isLast;
+            
+            return `
+                <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        ${!isMe ? `<img src="${getAvatar(user)}" class="w-7 h-7 rounded-full mb-1">` : ''}
+                        <div class="${isMe 
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-4 py-2 max-w-xs lg:max-w-md">
+                            ${m.text}
+                        </div>
+                        ${showReadReceipt ? `
+                            <div class="text-xs mt-1 ${m.read ? 'text-blue-500' : 'text-gray-400'}">
+                                ${m.read 
+                                    ? `<img src="${getAvatar(user)}" class="w-4 h-4 rounded-full inline"> Elolvasva` 
+                                    : '<i class="fas fa-check"></i> Elküldve'}
+                            </div>
+                        ` : ''}
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
         
         container.scrollTop = container.scrollHeight;
     } catch (e) {}
@@ -1945,15 +2248,30 @@ async function loadChatMessages(userId) {
         const container = document.getElementById(`chat-messages-${userId}`);
         if (!container) return;
         
-        container.innerHTML = messages.map(m => `
-            <div class="flex ${m.from === currentUser._id ? 'justify-end' : 'justify-start'}">
-                <div class="${m.from === currentUser._id 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-3 py-1.5 max-w-[200px] text-sm">
-                    ${m.text}
+        const user = allUsers.find(u => u._id === userId);
+        
+        container.innerHTML = messages.map((m, idx) => {
+            const isMe = m.from === currentUser._id;
+            const isLast = idx === messages.length - 1;
+            const showReadReceipt = isMe && isLast;
+            
+            return `
+                <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <div class="${isMe 
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-3 py-1.5 max-w-[200px] text-sm">
+                            ${m.text}
+                        </div>
+                        ${showReadReceipt ? `
+                            <div class="read-receipt mt-0.5 ${m.read ? 'seen' : ''}">
+                                ${m.read ? `<img src="${getAvatar(user)}" class="w-3 h-3 rounded-full inline">` : '<i class="fas fa-check"></i>'}
+                            </div>
+                        ` : ''}
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
         
         container.scrollTop = container.scrollHeight;
     } catch (e) {}
