@@ -71,7 +71,18 @@ const postSchema = new mongoose.Schema({
     author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     content: { type: String },
     image: { type: String },
+    feeling: { type: String }, // Érzés/tevékenység
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    reactions: {
+        like: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        love: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        haha: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        wow: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        sad: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        angry: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    },
+    savedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    editedAt: { type: Date },
     comments: [{
         author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         text: String,
@@ -532,7 +543,7 @@ app.delete('/api/posts/:id', auth, async (req, res) => {
     res.json({ message: 'Poszt törölve!' });
 });
 
-// Lájkolás
+// Lájkolás (régi, kompatibilitás miatt)
 app.post('/api/posts/:id/like', auth, async (req, res) => {
     const post = await Post.findById(req.params.id);
     const idx = post.likes.indexOf(req.user._id);
@@ -557,6 +568,138 @@ app.post('/api/posts/:id/like', auth, async (req, res) => {
     await post.populate('author', 'firstName lastName username avatar');
     io.emit('updatePost', post);
     res.json(post);
+});
+
+// Reakció poszthoz (like, love, haha, wow, sad, angry)
+app.post('/api/posts/:id/react', auth, async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        const { reaction } = req.body;
+        const userId = req.user._id;
+        const userName = `${req.user.firstName} ${req.user.lastName}`.trim();
+        
+        // Inicializáljuk a reactions objektumot ha nincs
+        if (!post.reactions) {
+            post.reactions = { like: [], love: [], haha: [], wow: [], sad: [], angry: [] };
+        }
+        
+        // Töröljük a korábbi reakciót
+        ['like', 'love', 'haha', 'wow', 'sad', 'angry'].forEach(type => {
+            if (!post.reactions[type]) post.reactions[type] = [];
+            const idx = post.reactions[type].indexOf(userId);
+            if (idx > -1) post.reactions[type].splice(idx, 1);
+        });
+        
+        // Ellenőrizzük, hogy ugyanazt a reakciót adta-e (toggle)
+        const alreadyReacted = post.reactions[reaction]?.includes(userId);
+        
+        if (!alreadyReacted) {
+            post.reactions[reaction].push(userId);
+            
+            // Értesítés küldése
+            if (post.author.toString() !== userId.toString()) {
+                const reactionTexts = {
+                    like: 'kedveli',
+                    love: 'imádja',
+                    haha: 'viccesnek találja',
+                    wow: 'csodálja',
+                    sad: 'szomorúnak találja',
+                    angry: 'mérgesnek találja'
+                };
+                await Notification.create({
+                    user: post.author,
+                    text: `${userName} ${reactionTexts[reaction]} a bejegyzésedet`,
+                    type: 'like'
+                });
+                io.to(post.author.toString()).emit('notification');
+            }
+        }
+        
+        await post.save();
+        await post.populate('author', 'firstName lastName username avatar');
+        io.emit('updatePost', post);
+        res.json(post);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Poszt mentése
+app.post('/api/posts/:id/save', auth, async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post.savedBy) post.savedBy = [];
+        
+        const idx = post.savedBy.indexOf(req.user._id);
+        if (idx > -1) {
+            post.savedBy.splice(idx, 1);
+        } else {
+            post.savedBy.push(req.user._id);
+        }
+        
+        await post.save();
+        res.json({ saved: post.savedBy.includes(req.user._id) });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Mentett posztok lekérése
+app.get('/api/posts/saved', auth, async (req, res) => {
+    try {
+        const posts = await Post.find({ savedBy: req.user._id })
+            .populate('author', 'firstName lastName username avatar')
+            .populate('comments.author', 'firstName lastName username avatar')
+            .sort({ createdAt: -1 });
+        res.json(posts);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Emlékek (X éve ezen a napon)
+app.get('/api/posts/memories', auth, async (req, res) => {
+    try {
+        const today = new Date();
+        const memories = await Post.find({
+            author: req.user._id,
+            $expr: {
+                $and: [
+                    { $eq: [{ $dayOfMonth: '$createdAt' }, today.getDate()] },
+                    { $eq: [{ $month: '$createdAt' }, today.getMonth() + 1] },
+                    { $lt: [{ $year: '$createdAt' }, today.getFullYear()] }
+                ]
+            }
+        })
+        .populate('author', 'firstName lastName username avatar')
+        .sort({ createdAt: -1 })
+        .limit(5);
+        
+        res.json(memories);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Poszt szerkesztése
+app.put('/api/posts/:id', auth, async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) return res.status(404).json({ error: 'Poszt nem található!' });
+        if (post.author.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ error: 'Nincs jogosultságod!' });
+        }
+        
+        post.content = req.body.content;
+        post.editedAt = new Date();
+        await post.save();
+        
+        await post.populate('author', 'firstName lastName username avatar');
+        io.emit('updatePost', post);
+        res.json(post);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Komment hozzáadása
