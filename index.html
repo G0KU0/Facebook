@@ -638,6 +638,17 @@
                     </button>
                 </div>
                 
+                <!-- Csoport keresés -->
+                <div class="mb-6">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+                        <input type="text" id="communitySearchInput" placeholder="Csoportok keresése..." 
+                            class="w-full bg-white dark:bg-dark-200 border border-gray-200 dark:border-dark-300 rounded-xl pl-11 pr-4 py-3 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                            oninput="handleCommunitySearch(this.value)">
+                    </div>
+                    <div id="communitySearchResults" class="hidden mt-2 bg-white dark:bg-dark-200 rounded-xl shadow-lg border border-gray-200 dark:border-dark-300 max-h-64 overflow-y-auto"></div>
+                </div>
+                
                 <!-- Tabs -->
                 <div class="flex gap-2 mb-6 border-b border-gray-200 dark:border-dark-300">
                     <button onclick="showCommunitiesTab('my')" class="community-tab px-4 py-3 font-medium text-blue-600 border-b-2 border-blue-600">
@@ -1760,7 +1771,7 @@ function navigate(page, param = null) {
 }
 
 // ============ SEARCH ============
-function handleSearch(query) {
+async function handleSearch(query) {
     const dropdown = document.getElementById('searchDropdown');
     const results = document.getElementById('searchResults');
     
@@ -1770,30 +1781,61 @@ function handleSearch(query) {
     }
     
     const queryLower = query.toLowerCase();
-    const filtered = allUsers.filter(u => {
+    
+    // Felhasználók keresése
+    const filteredUsers = allUsers.filter(u => {
         const firstName = (u.firstName || '').toLowerCase();
         const lastName = (u.lastName || '').toLowerCase();
         const fullName = `${firstName} ${lastName}`;
         const username = (u.username || '').toLowerCase();
-        const email = (u.email || '').toLowerCase();
         
         return fullName.includes(queryLower) ||
                username.includes(queryLower) ||
-               email.includes(queryLower) ||
                firstName.includes(queryLower) ||
                lastName.includes(queryLower);
     });
     
-    if (filtered.length === 0) {
-        results.innerHTML = '<p class="text-gray-500 text-center py-4">Nincs találat</p>';
-    } else {
-        results.innerHTML = filtered.map(u => {
+    // Csoportok keresése
+    const filteredCommunities = await searchCommunities(query);
+    
+    let html = '';
+    
+    // Csoportok megjelenítése
+    if (filteredCommunities.length > 0) {
+        html += '<p class="text-xs font-semibold text-gray-500 px-2 py-1 uppercase">Csoportok</p>';
+        html += filteredCommunities.slice(0, 5).map(c => {
+            const privacyIcon = c.privacy === 'public' ? 'fa-globe' : c.privacy === 'private' ? 'fa-lock' : 'fa-eye-slash';
+            return `
+                <div onclick="navigate('community', '${c._id}')" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        ${c.cover ? `<img src="${c.cover}" class="w-10 h-10 rounded-lg object-cover">` : `<i class="fas fa-users text-white"></i>`}
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 dark:text-white text-sm flex items-center gap-1">
+                            ${c.name}
+                            ${c.isOfficial ? '<i class="fas fa-crown text-amber-500 text-xs"></i>' : ''}
+                        </p>
+                        <p class="text-xs text-gray-500"><i class="fas ${privacyIcon} mr-1"></i>${c.memberCount || c.members?.length || 1} tag</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Felhasználók megjelenítése
+    if (filteredUsers.length > 0) {
+        if (filteredCommunities.length > 0) {
+            html += '<hr class="my-2 border-gray-200 dark:border-dark-300">';
+        }
+        html += '<p class="text-xs font-semibold text-gray-500 px-2 py-1 uppercase">Felhasználók</p>';
+        html += filteredUsers.slice(0, 8).map(u => {
             const displayName = getUserName(u);
+            const badge = getUserBadge(u);
             return `
                 <div onclick="navigateToProfile('${u.username || u._id}')" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
                     <img src="${getAvatar(u)}" class="w-10 h-10 rounded-full">
                     <div>
-                        <p class="font-semibold text-gray-800 dark:text-white text-sm">${displayName}</p>
+                        <p class="font-semibold text-gray-800 dark:text-white text-sm inline-flex items-center">${displayName}${badge}</p>
                         <p class="text-xs text-gray-500">@${u.username || 'user'}</p>
                     </div>
                 </div>
@@ -1801,6 +1843,11 @@ function handleSearch(query) {
         }).join('');
     }
     
+    if (filteredUsers.length === 0 && filteredCommunities.length === 0) {
+        html = '<p class="text-gray-500 text-center py-4">Nincs találat</p>';
+    }
+    
+    results.innerHTML = html;
     dropdown.classList.remove('hidden');
 }
 
@@ -4183,6 +4230,7 @@ async function createCommunity() {
             body: JSON.stringify({ name, description, cover, privacy, category })
         });
         closeCreateCommunityModal();
+        refreshCommunityCache(); // Cache frissítése
         toast('Csoport létrehozva!', 'success');
         navigate('community', community._id);
     } catch (e) {}
@@ -4415,15 +4463,190 @@ function closeCommunityMembersModal() {
 }
 
 function openEditCommunityModal() {
-    // Reuse create modal for editing
-    document.getElementById('createCommunityModal').classList.remove('hidden');
-    document.getElementById('newCommunityName').value = currentCommunity.name;
-    document.getElementById('newCommunityDesc').value = currentCommunity.description || '';
-    document.getElementById('newCommunityCover').value = currentCommunity.cover || '';
-    document.getElementById('newCommunityCategory').value = currentCommunity.category || 'Általános';
+    // Create a separate edit modal
+    const modal = document.createElement('div');
+    modal.id = 'editCommunityModal';
+    modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
     
-    const privacyRadio = document.querySelector(`input[name="communityPrivacy"][value="${currentCommunity.privacy}"]`);
-    if (privacyRadio) privacyRadio.checked = true;
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-lg shadow-2xl slide-up max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300 sticky top-0 bg-white dark:bg-dark-200">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white">Csoport szerkesztése</h3>
+                <button onclick="this.closest('#editCommunityModal').remove()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                    <i class="fas fa-times text-gray-500"></i>
+                </button>
+            </div>
+            <div class="p-4 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Csoport neve *</label>
+                    <input type="text" id="editCommunityName" value="${currentCommunity.name}" 
+                        class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Leírás</label>
+                    <textarea id="editCommunityDesc" rows="3" 
+                        class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 resize-none">${currentCommunity.description || ''}</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Borítókép URL</label>
+                    <input type="text" id="editCommunityCover" value="${currentCommunity.cover || ''}" placeholder="https://example.com/kep.jpg" 
+                        class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Adatvédelem</label>
+                    <div class="space-y-2">
+                        <label class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-dark-300 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-400 transition">
+                            <input type="radio" name="editCommunityPrivacy" value="public" ${currentCommunity.privacy === 'public' ? 'checked' : ''} class="mt-1">
+                            <div>
+                                <p class="font-medium text-gray-800 dark:text-white flex items-center gap-2">
+                                    <i class="fas fa-globe text-green-500"></i> Nyilvános
+                                </p>
+                                <p class="text-xs text-gray-500">Bárki csatlakozhat és láthatja a posztokat</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-dark-300 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-400 transition">
+                            <input type="radio" name="editCommunityPrivacy" value="private" ${currentCommunity.privacy === 'private' ? 'checked' : ''} class="mt-1">
+                            <div>
+                                <p class="font-medium text-gray-800 dark:text-white flex items-center gap-2">
+                                    <i class="fas fa-lock text-yellow-500"></i> Privát
+                                </p>
+                                <p class="text-xs text-gray-500">Csatlakozáshoz kérelem szükséges</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-dark-300 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-400 transition">
+                            <input type="radio" name="editCommunityPrivacy" value="hidden" ${currentCommunity.privacy === 'hidden' ? 'checked' : ''} class="mt-1">
+                            <div>
+                                <p class="font-medium text-gray-800 dark:text-white flex items-center gap-2">
+                                    <i class="fas fa-eye-slash text-red-500"></i> Rejtett
+                                </p>
+                                <p class="text-xs text-gray-500">Csak meghívóval csatlakozhat</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategória</label>
+                    <select id="editCommunityCategory" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Általános" ${currentCommunity.category === 'Általános' ? 'selected' : ''}>Általános</option>
+                        <option value="Hobbi" ${currentCommunity.category === 'Hobbi' ? 'selected' : ''}>Hobbi</option>
+                        <option value="Sport" ${currentCommunity.category === 'Sport' ? 'selected' : ''}>Sport</option>
+                        <option value="Játék" ${currentCommunity.category === 'Játék' ? 'selected' : ''}>Játék</option>
+                        <option value="Zene" ${currentCommunity.category === 'Zene' ? 'selected' : ''}>Zene</option>
+                        <option value="Film" ${currentCommunity.category === 'Film' ? 'selected' : ''}>Film & Sorozat</option>
+                        <option value="Technológia" ${currentCommunity.category === 'Technológia' ? 'selected' : ''}>Technológia</option>
+                        <option value="Oktatás" ${currentCommunity.category === 'Oktatás' ? 'selected' : ''}>Oktatás</option>
+                        <option value="Üzlet" ${currentCommunity.category === 'Üzlet' ? 'selected' : ''}>Üzlet</option>
+                        <option value="Egyéb" ${currentCommunity.category === 'Egyéb' ? 'selected' : ''}>Egyéb</option>
+                    </select>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-200 dark:border-dark-300 sticky bottom-0 bg-white dark:bg-dark-200">
+                <button onclick="saveCommunityEdit()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition">
+                    Mentés
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function saveCommunityEdit() {
+    const name = document.getElementById('editCommunityName').value.trim();
+    const description = document.getElementById('editCommunityDesc').value.trim();
+    const cover = document.getElementById('editCommunityCover').value.trim();
+    const privacy = document.querySelector('input[name="editCommunityPrivacy"]:checked').value;
+    const category = document.getElementById('editCommunityCategory').value;
+    
+    if (!name || name.length < 3) {
+        return toast('A csoport neve legalább 3 karakter legyen!', 'error');
+    }
+    
+    try {
+        await api(`/communities/${currentCommunity._id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ name, description, cover, privacy, category })
+        });
+        document.getElementById('editCommunityModal')?.remove();
+        toast('Csoport frissítve!', 'success');
+        loadCommunityDetail(currentCommunity._id);
+    } catch (e) {}
+}
+
+// Csoport keresés
+let allCommunitiesCache = [];
+
+async function searchCommunities(query) {
+    if (!query.trim()) return [];
+    const queryLower = query.toLowerCase();
+    
+    // Ha nincs még cache, betöltjük
+    if (allCommunitiesCache.length === 0) {
+        try {
+            allCommunitiesCache = await api('/communities');
+        } catch (e) {
+            return [];
+        }
+    }
+    
+    return allCommunitiesCache.filter(c => 
+        c.name.toLowerCase().includes(queryLower) ||
+        (c.description || '').toLowerCase().includes(queryLower) ||
+        (c.category || '').toLowerCase().includes(queryLower)
+    );
+}
+
+// Csoport keresés a Communities oldalon
+async function handleCommunitySearch(query) {
+    const resultsContainer = document.getElementById('communitySearchResults');
+    
+    if (!query.trim()) {
+        resultsContainer.classList.add('hidden');
+        return;
+    }
+    
+    const communities = await searchCommunities(query);
+    
+    if (communities.length === 0) {
+        resultsContainer.innerHTML = '<p class="text-gray-500 text-center py-4">Nincs találat</p>';
+    } else {
+        resultsContainer.innerHTML = communities.map(c => {
+            const isMember = c.members?.some(m => (m._id || m) === currentUser._id);
+            const privacyIcon = c.privacy === 'public' ? 'fa-globe' : c.privacy === 'private' ? 'fa-lock' : 'fa-eye-slash';
+            const creatorName = getUserName(c.creator);
+            
+            return `
+                <div onclick="navigate('community', '${c._id}')" class="flex items-center gap-4 p-3 hover:bg-gray-50 dark:hover:bg-dark-300 cursor-pointer transition border-b border-gray-100 dark:border-dark-300 last:border-0">
+                    <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        ${c.cover ? `<img src="${c.cover}" class="w-14 h-14 rounded-xl object-cover">` : `<i class="fas fa-users text-white text-xl"></i>`}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                            ${c.name}
+                            ${c.isOfficial ? '<span class="text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-crown mr-1"></i>Hivatalos</span>' : ''}
+                        </p>
+                        <p class="text-sm text-gray-500 truncate">
+                            <i class="fas ${privacyIcon} mr-1"></i>${c.privacy === 'public' ? 'Nyilvános' : c.privacy === 'private' ? 'Privát' : 'Rejtett'} · ${c.memberCount || c.members?.length || 1} tag
+                        </p>
+                        <p class="text-xs text-gray-400 mt-0.5">Létrehozta: ${creatorName}</p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        ${isMember 
+                            ? '<span class="text-green-500 text-sm"><i class="fas fa-check-circle"></i> Tag</span>'
+                            : '<span class="text-blue-500 text-sm"><i class="fas fa-arrow-right"></i></span>'
+                        }
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    resultsContainer.classList.remove('hidden');
+}
+
+// Cache frissítése ha új csoport jön létre
+function refreshCommunityCache() {
+    allCommunitiesCache = [];
 }
 </script>
 
