@@ -303,16 +303,19 @@
             
             <!-- Navigation -->
             <div class="hidden md:flex items-center gap-2">
-                <button onclick="navigate('feed')" id="navFeed" class="nav-btn px-8 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition" title="Főoldal">
+                <button onclick="navigate('feed')" id="navFeed" class="nav-btn px-6 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition" title="Főoldal">
                     <i class="fas fa-home text-xl text-gray-500 dark:text-gray-400"></i>
                 </button>
-                <button onclick="navigate('friends')" id="navFriends" class="nav-btn px-8 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition" title="Barátok">
+                <button onclick="navigate('communities')" id="navCommunities" class="nav-btn px-6 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition" title="Csoportok">
+                    <i class="fas fa-users text-xl text-gray-500 dark:text-gray-400"></i>
+                </button>
+                <button onclick="navigate('friends')" id="navFriends" class="nav-btn px-6 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition" title="Barátok">
                     <i class="fas fa-user-friends text-xl text-gray-500 dark:text-gray-400"></i>
                 </button>
-                <button onclick="navigate('messenger')" id="navMessenger" class="nav-btn px-8 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition relative" title="Messenger">
+                <button onclick="navigate('messenger')" id="navMessenger" class="nav-btn px-6 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition relative" title="Messenger">
                     <i class="fab fa-facebook-messenger text-xl text-gray-500 dark:text-gray-400"></i>
                 </button>
-                <button onclick="navigate('notifications')" id="navNotifications" class="nav-btn px-8 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition relative" title="Értesítések">
+                <button onclick="navigate('notifications')" id="navNotifications" class="nav-btn px-6 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition relative" title="Értesítések">
                     <i class="fas fa-bell text-xl text-gray-500 dark:text-gray-400"></i>
                     <span id="notifBadge" class="hidden absolute top-1 right-4 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
                 </button>
@@ -617,6 +620,127 @@
                         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Értesítések</h1>
                     </div>
                     <div id="notificationsList" class="divide-y divide-gray-100 dark:divide-dark-300"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ========== COMMUNITIES PAGE ========== -->
+        <div id="communitiesPage" class="hidden">
+            <div class="max-w-5xl mx-auto px-4 py-6">
+                <!-- Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <h1 class="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
+                        <i class="fas fa-users text-blue-500"></i>
+                        Csoportok
+                    </h1>
+                    <button onclick="openCreateCommunityModal()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition">
+                        <i class="fas fa-plus mr-2"></i>Új csoport
+                    </button>
+                </div>
+                
+                <!-- Tabs -->
+                <div class="flex gap-2 mb-6 border-b border-gray-200 dark:border-dark-300">
+                    <button onclick="showCommunitiesTab('my')" class="community-tab px-4 py-3 font-medium text-blue-600 border-b-2 border-blue-600">
+                        Saját csoportjaim
+                    </button>
+                    <button onclick="showCommunitiesTab('discover')" class="community-tab px-4 py-3 font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                        Felfedezés
+                    </button>
+                    <button onclick="showCommunitiesTab('invites')" class="community-tab px-4 py-3 font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                        Meghívók
+                    </button>
+                </div>
+                
+                <!-- Community List -->
+                <div id="communitiesContent" class="grid md:grid-cols-2 gap-4"></div>
+            </div>
+        </div>
+        
+        <!-- ========== COMMUNITY DETAIL PAGE ========== -->
+        <div id="communityPage" class="hidden">
+            <div class="bg-white dark:bg-dark-200 shadow">
+                <div class="max-w-5xl mx-auto">
+                    <!-- Cover -->
+                    <div class="h-48 md:h-64 bg-gradient-to-r from-blue-500 to-purple-600 relative rounded-b-lg overflow-hidden">
+                        <img id="communityCover" src="" class="w-full h-full object-cover hidden">
+                    </div>
+                    <!-- Community Info -->
+                    <div class="px-6 py-4">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h1 id="communityName" class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-2"></h1>
+                                <p id="communityPrivacy" class="text-gray-500 text-sm mt-1"></p>
+                                <p id="communityMemberCount" class="text-gray-600 dark:text-gray-400 font-medium mt-1"></p>
+                            </div>
+                            <div id="communityActions" class="flex gap-2"></div>
+                        </div>
+                        <p id="communityDescription" class="mt-3 text-gray-600 dark:text-gray-400"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Community Content -->
+            <div class="max-w-5xl mx-auto px-4 py-6">
+                <div class="flex flex-col lg:flex-row gap-6">
+                    <!-- Left - Posts -->
+                    <div class="flex-1">
+                        <!-- Create Post -->
+                        <div id="communityCreatePost" class="hidden bg-white dark:bg-dark-200 rounded-xl p-4 mb-4 shadow">
+                            <div class="flex items-center gap-3">
+                                <img id="communityPostAvatar" src="" class="w-10 h-10 rounded-full">
+                                <button onclick="openCommunityPostModal()" class="flex-1 bg-gray-100 dark:bg-dark-300 rounded-full px-4 py-2.5 text-left text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                                    Írj valamit a csoportba...
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Posts -->
+                        <div id="communityPosts" class="space-y-4"></div>
+                    </div>
+                    
+                    <!-- Right - Info -->
+                    <div class="lg:w-80">
+                        <!-- About -->
+                        <div class="bg-white dark:bg-dark-200 rounded-xl shadow p-4 mb-4">
+                            <h3 class="font-bold text-gray-800 dark:text-white mb-3">Névjegy</h3>
+                            <p id="communityAbout" class="text-gray-600 dark:text-gray-400 text-sm"></p>
+                            <div id="communityRules" class="mt-4 hidden">
+                                <h4 class="font-semibold text-gray-700 dark:text-gray-300 text-sm mb-2">Szabályok</h4>
+                                <ul id="communityRulesList" class="space-y-2 text-sm text-gray-600 dark:text-gray-400"></ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Members -->
+                        <div class="bg-white dark:bg-dark-200 rounded-xl shadow p-4 mb-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-bold text-gray-800 dark:text-white">Tagok</h3>
+                                <button onclick="showCommunityMembers()" class="text-blue-500 text-sm hover:underline">Összes</button>
+                            </div>
+                            <div id="communityMembersList" class="grid grid-cols-3 gap-2"></div>
+                        </div>
+                        
+                        <!-- Pending Members (Admin only) -->
+                        <div id="communityPendingSection" class="hidden bg-white dark:bg-dark-200 rounded-xl shadow p-4 mb-4">
+                            <h3 class="font-bold text-gray-800 dark:text-white mb-3">Csatlakozási kérelmek</h3>
+                            <div id="communityPendingList" class="space-y-2"></div>
+                        </div>
+                        
+                        <!-- Admin Panel -->
+                        <div id="communityAdminPanel" class="hidden bg-white dark:bg-dark-200 rounded-xl shadow p-4">
+                            <h3 class="font-bold text-gray-800 dark:text-white mb-3">Admin műveletek</h3>
+                            <div class="space-y-2">
+                                <button onclick="openEditCommunityModal()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-700 dark:text-gray-300 text-sm">
+                                    <i class="fas fa-edit mr-2 text-gray-500"></i>Csoport szerkesztése
+                                </button>
+                                <button onclick="openInviteMemberModal()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-700 dark:text-gray-300 text-sm">
+                                    <i class="fas fa-user-plus mr-2 text-gray-500"></i>Tagok meghívása
+                                </button>
+                                <button onclick="deleteCommunity()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition text-red-600 text-sm">
+                                    <i class="fas fa-trash mr-2"></i>Csoport törlése
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1103,6 +1227,163 @@
     </div>
 </div>
 
+<!-- Create Community Modal -->
+<div id="createCommunityModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-lg shadow-2xl slide-up max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300 sticky top-0 bg-white dark:bg-dark-200">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white">Új csoport létrehozása</h3>
+            <button onclick="closeCreateCommunityModal()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                <i class="fas fa-times text-gray-500"></i>
+            </button>
+        </div>
+        <div class="p-4 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Csoport neve *</label>
+                <input type="text" id="newCommunityName" placeholder="pl. Programozók, Focisták..." 
+                    class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Leírás</label>
+                <textarea id="newCommunityDesc" rows="3" placeholder="Miről szól ez a csoport?" 
+                    class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Borítókép URL</label>
+                <input type="text" id="newCommunityCover" placeholder="https://example.com/kep.jpg" 
+                    class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Adatvédelem</label>
+                <div class="space-y-2">
+                    <label class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-dark-300 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-400 transition">
+                        <input type="radio" name="communityPrivacy" value="public" checked class="mt-1">
+                        <div>
+                            <p class="font-medium text-gray-800 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-globe text-green-500"></i> Nyilvános
+                            </p>
+                            <p class="text-xs text-gray-500">Bárki csatlakozhat és láthatja a posztokat</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-dark-300 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-400 transition">
+                        <input type="radio" name="communityPrivacy" value="private" class="mt-1">
+                        <div>
+                            <p class="font-medium text-gray-800 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-lock text-yellow-500"></i> Privát
+                            </p>
+                            <p class="text-xs text-gray-500">Csatlakozáshoz kérelem szükséges</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-dark-300 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-400 transition">
+                        <input type="radio" name="communityPrivacy" value="hidden" class="mt-1">
+                        <div>
+                            <p class="font-medium text-gray-800 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-eye-slash text-red-500"></i> Rejtett
+                            </p>
+                            <p class="text-xs text-gray-500">Csak meghívóval csatlakozhat</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategória</label>
+                <select id="newCommunityCategory" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="Általános">Általános</option>
+                    <option value="Hobbi">Hobbi</option>
+                    <option value="Sport">Sport</option>
+                    <option value="Játék">Játék</option>
+                    <option value="Zene">Zene</option>
+                    <option value="Film">Film & Sorozat</option>
+                    <option value="Technológia">Technológia</option>
+                    <option value="Oktatás">Oktatás</option>
+                    <option value="Üzlet">Üzlet</option>
+                    <option value="Egyéb">Egyéb</option>
+                </select>
+            </div>
+        </div>
+        <div class="p-4 border-t border-gray-200 dark:border-dark-300 sticky bottom-0 bg-white dark:bg-dark-200">
+            <button onclick="createCommunity()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition">
+                Csoport létrehozása
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Community Post Modal -->
+<div id="communityPostModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-lg shadow-2xl slide-up">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white">Poszt a csoportba</h3>
+            <button onclick="closeCommunityPostModal()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                <i class="fas fa-times text-gray-500"></i>
+            </button>
+        </div>
+        <div class="p-4">
+            <div class="flex items-center gap-3 mb-4">
+                <img id="communityPostModalAvatar" src="" class="w-10 h-10 rounded-full">
+                <div>
+                    <p id="communityPostModalName" class="font-semibold text-gray-800 dark:text-white text-sm"></p>
+                    <p id="communityPostModalGroup" class="text-xs text-gray-500"></p>
+                </div>
+            </div>
+            <textarea id="communityPostContent" rows="4" placeholder="Írj valamit a csoportba..." 
+                class="w-full bg-transparent text-gray-800 dark:text-white text-lg resize-none outline-none placeholder-gray-400"></textarea>
+            <div id="communityPostImagePreview" class="hidden mt-4 relative">
+                <img id="communityPostPreviewImg" src="" class="max-h-64 w-full object-cover rounded-lg">
+                <button onclick="removeCommunityPostImage()" class="absolute top-2 right-2 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="px-4 pb-4">
+            <div class="flex items-center justify-between p-3 border border-gray-200 dark:border-dark-300 rounded-lg mb-4">
+                <span class="text-gray-700 dark:text-gray-300 font-medium text-sm">Hozzáadás</span>
+                <div class="flex gap-1">
+                    <label class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full cursor-pointer transition" title="Kép">
+                        <i class="fas fa-image text-green-500"></i>
+                        <input type="file" id="communityPostImageInput" accept="image/*" class="hidden" onchange="previewCommunityPostImage(this)">
+                    </label>
+                </div>
+            </div>
+            <button onclick="createCommunityPost()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition">
+                Közzététel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Invite Members Modal -->
+<div id="inviteMemberModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-md shadow-2xl slide-up max-h-[80vh] overflow-y-auto">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300 sticky top-0 bg-white dark:bg-dark-200">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white">Tagok meghívása</h3>
+            <button onclick="closeInviteMemberModal()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                <i class="fas fa-times text-gray-500"></i>
+            </button>
+        </div>
+        <div class="p-4">
+            <input type="text" id="inviteSearch" placeholder="Keresés barátok között..." 
+                class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none mb-4"
+                oninput="filterInviteList(this.value)">
+            <div id="inviteFriendsList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Community Members Modal -->
+<div id="communityMembersModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-md shadow-2xl slide-up max-h-[80vh] overflow-y-auto">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300 sticky top-0 bg-white dark:bg-dark-200">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white">Tagok</h3>
+            <button onclick="closeCommunityMembersModal()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                <i class="fas fa-times text-gray-500"></i>
+            </button>
+        </div>
+        <div class="p-4">
+            <div id="allCommunityMembers" class="space-y-2"></div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toastContainer" class="fixed bottom-4 left-4 z-50 space-y-2"></div>
 
@@ -1472,6 +1753,8 @@ function navigate(page, param = null) {
         case 'friends': loadFriends(); break;
         case 'profile': loadProfile(param || currentUser._id); break;
         case 'notifications': loadNotifications(); break;
+        case 'communities': loadCommunities(); break;
+        case 'community': loadCommunityDetail(param); break;
         case 'admin': loadAdmin(); break;
     }
 }
@@ -3536,6 +3819,613 @@ async function leaveGroup(groupId) {
 function startGroupCall(groupId, type) {
     toast(`Csoportos ${type === 'video' ? 'videó' : 'hang'}hívás indítása...`, 'info');
     // Itt lenne a csoportos hívás logika
+}
+
+// ============ COMMUNITIES (KÖZÖSSÉGI CSOPORTOK) ============
+let allCommunities = [];
+let currentCommunity = null;
+
+async function loadCommunities() {
+    showCommunitiesTab('my');
+}
+
+async function showCommunitiesTab(tab) {
+    document.querySelectorAll('.community-tab').forEach(btn => {
+        btn.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+        btn.classList.add('text-gray-500');
+    });
+    event?.target?.classList.remove('text-gray-500');
+    event?.target?.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+    
+    const content = document.getElementById('communitiesContent');
+    
+    try {
+        let communities = [];
+        
+        if (tab === 'my') {
+            communities = await api('/communities/my');
+        } else if (tab === 'discover') {
+            communities = await api('/communities/discover');
+        } else if (tab === 'invites') {
+            const all = await api('/communities');
+            communities = all.filter(c => c.invitedMembers?.includes(currentUser._id));
+        }
+        
+        if (communities.length === 0) {
+            content.innerHTML = `
+                <div class="col-span-2 text-center py-12">
+                    <div class="w-16 h-16 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-users text-gray-400 text-2xl"></i>
+                    </div>
+                    <p class="text-gray-500">${tab === 'my' ? 'Még nem csatlakoztál egyetlen csoporthoz sem' : tab === 'discover' ? 'Nincs több felfedezésre váró csoport' : 'Nincsenek meghívóid'}</p>
+                    ${tab === 'my' ? '<button onclick="showCommunitiesTab(\'discover\')" class="mt-4 text-blue-500 hover:underline">Fedezz fel csoportokat</button>' : ''}
+                </div>
+            `;
+            return;
+        }
+        
+        content.innerHTML = communities.map(c => {
+            const isMember = c.members?.some(m => (m._id || m) === currentUser._id);
+            const isInvited = c.invitedMembers?.includes(currentUser._id);
+            const privacyIcon = c.privacy === 'public' ? 'fa-globe' : c.privacy === 'private' ? 'fa-lock' : 'fa-eye-slash';
+            const privacyText = c.privacy === 'public' ? 'Nyilvános' : c.privacy === 'private' ? 'Privát' : 'Rejtett';
+            const creatorName = getUserName(c.creator);
+            const officialBadge = c.isOfficial ? '<span class="ml-2 text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-check-circle mr-1"></i>Hivatalos</span>' : '';
+            const officialBadge = c.isOfficial ? '<span class="ml-2 text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-check-circle mr-1"></i>Hivatalos</span>' : '';
+            
+            return `
+                <div class="bg-white dark:bg-dark-200 rounded-xl shadow overflow-hidden hover:shadow-lg transition cursor-pointer" onclick="navigate('community', '${c._id}')">
+                    <div class="h-24 bg-gradient-to-r from-blue-500 to-purple-600 relative">
+                        ${c.cover ? `<img src="${c.cover}" class="w-full h-full object-cover">` : ''}
+                        ${c.isOfficial ? `<div class="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs px-2 py-1 rounded-full shadow"><i class="fas fa-crown mr-1"></i>Hivatalos</div>` : ''}
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-gray-800 dark:text-white flex items-center flex-wrap">
+                            ${c.name}
+                        </h3>
+                        <p class="text-sm text-gray-500 flex items-center gap-2 mt-1">
+                            <i class="fas ${privacyIcon}"></i> ${privacyText} · ${c.memberCount || c.members?.length || 1} tag
+                        </p>
+                        <p class="text-xs text-gray-400 mt-1">Létrehozta: ${creatorName}${c.creator?.isOwner ? ' <span class="text-amber-500"><i class="fas fa-crown"></i> Tulajdonos</span>' : ''}</p>
+                        
+                        <div class="mt-3 flex gap-2" onclick="event.stopPropagation()">
+                            ${isMember ? `
+                                <button class="flex-1 px-3 py-2 bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-sm">
+                                    <i class="fas fa-check mr-1"></i>Tag
+                                </button>
+                            ` : isInvited ? `
+                                <button onclick="joinCommunity('${c._id}')" class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium text-sm transition">
+                                    <i class="fas fa-user-plus mr-1"></i>Csatlakozás
+                                </button>
+                            ` : c.privacy === 'public' ? `
+                                <button onclick="joinCommunity('${c._id}')" class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium text-sm transition">
+                                    <i class="fas fa-user-plus mr-1"></i>Csatlakozás
+                                </button>
+                            ` : c.privacy === 'private' ? `
+                                <button onclick="joinCommunity('${c._id}')" class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium text-sm transition">
+                                    <i class="fas fa-paper-plane mr-1"></i>Kérelem
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error('Communities error:', e);
+    }
+}
+
+async function loadCommunityDetail(communityId) {
+    try {
+        currentCommunity = await api(`/communities/${communityId}`);
+        const c = currentCommunity;
+        
+        // Cover
+        const coverEl = document.getElementById('communityCover');
+        if (c.cover) {
+            coverEl.src = c.cover;
+            coverEl.classList.remove('hidden');
+        } else {
+            coverEl.classList.add('hidden');
+        }
+        
+        // Name with badges
+        const officialBadge = c.isOfficial ? '<span class="ml-2 text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-1 rounded-full font-semibold shadow-lg"><i class="fas fa-crown mr-1"></i>Hivatalos csoport</span>' : '';
+        document.getElementById('communityName').innerHTML = c.name + officialBadge;
+        
+        // Privacy
+        const privacyIcons = { public: 'fa-globe', private: 'fa-lock', hidden: 'fa-eye-slash' };
+        const privacyTexts = { public: 'Nyilvános csoport', private: 'Privát csoport', hidden: 'Rejtett csoport' };
+        document.getElementById('communityPrivacy').innerHTML = `<i class="fas ${privacyIcons[c.privacy]} mr-1"></i>${privacyTexts[c.privacy]}`;
+        
+        // Member count
+        document.getElementById('communityMemberCount').textContent = `${c.members?.length || 1} tag`;
+        
+        // Description
+        document.getElementById('communityDescription').textContent = c.description || '';
+        document.getElementById('communityAbout').textContent = c.description || 'Nincs leírás.';
+        
+        // Rules
+        const rulesSection = document.getElementById('communityRules');
+        const rulesList = document.getElementById('communityRulesList');
+        if (c.rules && c.rules.length > 0) {
+            rulesSection.classList.remove('hidden');
+            rulesList.innerHTML = c.rules.map((r, i) => `<li>${i + 1}. ${r}</li>`).join('');
+        } else {
+            rulesSection.classList.add('hidden');
+        }
+        
+        // Check membership
+        const isMember = c.members?.some(m => m._id === currentUser._id);
+        const isAdmin = c.admins?.some(a => a._id === currentUser._id);
+        const isCreator = c.creator?._id === currentUser._id;
+        const isPending = c.pendingMembers?.some(p => p._id === currentUser._id);
+        
+        // Actions
+        const actionsEl = document.getElementById('communityActions');
+        if (isMember) {
+            actionsEl.innerHTML = `
+                ${!isCreator ? `
+                    <button onclick="leaveCommunity('${c._id}')" class="px-4 py-2 bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Kilépés
+                    </button>
+                ` : ''}
+                <button onclick="openInviteMemberModal()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition">
+                    <i class="fas fa-user-plus mr-2"></i>Meghívás
+                </button>
+            `;
+        } else if (isPending) {
+            actionsEl.innerHTML = `
+                <button class="px-4 py-2 bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg font-medium cursor-default">
+                    <i class="fas fa-clock mr-2"></i>Kérelem elküldve
+                </button>
+            `;
+        } else {
+            actionsEl.innerHTML = `
+                <button onclick="joinCommunity('${c._id}')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition">
+                    <i class="fas fa-user-plus mr-2"></i>${c.privacy === 'public' ? 'Csatlakozás' : 'Csatlakozási kérelem'}
+                </button>
+            `;
+        }
+        
+        // Create post section
+        const createPostSection = document.getElementById('communityCreatePost');
+        if (isMember) {
+            createPostSection.classList.remove('hidden');
+            document.getElementById('communityPostAvatar').src = getAvatar(currentUser);
+        } else {
+            createPostSection.classList.add('hidden');
+        }
+        
+        // Members list (first 6)
+        const membersListEl = document.getElementById('communityMembersList');
+        membersListEl.innerHTML = (c.members || []).slice(0, 6).map(m => `
+            <div onclick="navigateToProfile('${m.username || m._id}')" class="cursor-pointer">
+                <img src="${getAvatar(m)}" class="w-full aspect-square rounded-lg object-cover hover:brightness-95 transition">
+                <p class="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate">${getUserName(m)}</p>
+            </div>
+        `).join('');
+        
+        // Pending members (admin only)
+        const pendingSection = document.getElementById('communityPendingSection');
+        const pendingListEl = document.getElementById('communityPendingList');
+        if (isAdmin && c.pendingMembers && c.pendingMembers.length > 0) {
+            pendingSection.classList.remove('hidden');
+            pendingListEl.innerHTML = c.pendingMembers.map(p => `
+                <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-dark-300 rounded-lg">
+                    <div class="flex items-center gap-2">
+                        <img src="${getAvatar(p)}" class="w-10 h-10 rounded-full">
+                        <span class="font-medium text-gray-800 dark:text-white text-sm">${getUserName(p)}</span>
+                    </div>
+                    <div class="flex gap-1">
+                        <button onclick="approveMember('${c._id}', '${p._id}')" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition">Elfogad</button>
+                        <button onclick="rejectMember('${c._id}', '${p._id}')" class="px-3 py-1 bg-gray-200 dark:bg-dark-400 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-dark-500 transition">Elutasít</button>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            pendingSection.classList.add('hidden');
+        }
+        
+        // Admin panel
+        const adminPanel = document.getElementById('communityAdminPanel');
+        if (isAdmin || isCreator) {
+            adminPanel.classList.remove('hidden');
+        } else {
+            adminPanel.classList.add('hidden');
+        }
+        
+        // Load posts
+        await loadCommunityPosts(communityId);
+        
+    } catch (e) {
+        console.error('Community detail error:', e);
+        toast('Csoport nem található!', 'error');
+        navigate('communities');
+    }
+}
+
+async function loadCommunityPosts(communityId) {
+    try {
+        const posts = await api(`/communities/${communityId}/posts`);
+        const container = document.getElementById('communityPosts');
+        
+        if (posts.length === 0) {
+            container.innerHTML = `
+                <div class="bg-white dark:bg-dark-200 rounded-xl p-8 text-center">
+                    <i class="fas fa-newspaper text-gray-300 text-4xl mb-3"></i>
+                    <p class="text-gray-500">Még nincsenek posztok ebben a csoportban</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = posts.map(post => {
+            const authorName = getUserName(post.author);
+            const authorBadge = getUserBadge(post.author);
+            const reactions = post.reactions || {};
+            const totalReactions = Object.values(reactions).reduce((sum, arr) => sum + (arr?.length || 0), 0);
+            const myReaction = Object.keys(reactions).find(type => reactions[type]?.includes(currentUser._id));
+            
+            const reactionIcons = {
+                like: { icon: '👍' }, love: { icon: '❤️' }, haha: { icon: '😂' },
+                wow: { icon: '😮' }, sad: { icon: '😢' }, angry: { icon: '😡' }
+            };
+            
+            const topReactions = Object.entries(reactions)
+                .filter(([_, arr]) => arr?.length > 0)
+                .sort((a, b) => b[1].length - a[1].length)
+                .slice(0, 3);
+            
+            const canDelete = post.author._id === currentUser._id || 
+                              currentCommunity?.admins?.some(a => a._id === currentUser._id) ||
+                              currentUser.isOwner;
+            
+            return `
+                <div class="bg-white dark:bg-dark-200 rounded-xl shadow">
+                    <div class="p-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${getAvatar(post.author)}" class="w-10 h-10 rounded-full cursor-pointer" onclick="navigateToProfile('${post.author.username || post.author._id}')">
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-800 dark:text-white text-sm">${authorName}${authorBadge}</p>
+                                <p class="text-xs text-gray-500">${timeAgo(post.createdAt)}${post.isPinned ? ' · <i class="fas fa-thumbtack text-blue-500"></i> Kitűzve' : ''}</p>
+                            </div>
+                            ${canDelete ? `
+                                <button onclick="deleteCommunityPost('${currentCommunity._id}', '${post._id}')" class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-gray-400 hover:text-red-500 transition">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                        ${post.content ? `<p class="mt-3 text-gray-800 dark:text-white whitespace-pre-line">${formatPostContent(post.content)}</p>` : ''}
+                    </div>
+                    ${post.image ? `<img src="${post.image}" class="w-full max-h-[500px] object-cover cursor-pointer" onclick="openImageModal('${post.image}')">` : ''}
+                    <div class="px-4 py-2 flex items-center justify-between text-sm text-gray-500 border-t border-gray-100 dark:border-dark-300">
+                        <div class="flex items-center gap-1">
+                            ${totalReactions > 0 ? `
+                                <div class="flex -space-x-1">
+                                    ${topReactions.map(([type]) => `<span class="text-base">${reactionIcons[type]?.icon || '👍'}</span>`).join('')}
+                                </div>
+                                <span class="ml-1">${totalReactions}</span>
+                            ` : ''}
+                        </div>
+                        <span>${post.comments?.length || 0} hozzászólás</span>
+                    </div>
+                    <div class="px-2 py-1 flex border-t border-gray-100 dark:border-dark-300">
+                        <div class="flex-1 relative reaction-btn-container">
+                            <div class="reactions-popup gap-1">
+                                <span class="reaction-icon" onclick="reactToCommunityPost('${currentCommunity._id}', '${post._id}', 'like')">👍</span>
+                                <span class="reaction-icon" onclick="reactToCommunityPost('${currentCommunity._id}', '${post._id}', 'love')">❤️</span>
+                                <span class="reaction-icon" onclick="reactToCommunityPost('${currentCommunity._id}', '${post._id}', 'haha')">😂</span>
+                                <span class="reaction-icon" onclick="reactToCommunityPost('${currentCommunity._id}', '${post._id}', 'wow')">😮</span>
+                                <span class="reaction-icon" onclick="reactToCommunityPost('${currentCommunity._id}', '${post._id}', 'sad')">😢</span>
+                                <span class="reaction-icon" onclick="reactToCommunityPost('${currentCommunity._id}', '${post._id}', 'angry')">😡</span>
+                            </div>
+                            <button onclick="reactToCommunityPost('${currentCommunity._id}', '${post._id}', 'like')" class="w-full flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition ${myReaction ? 'text-blue-500' : 'text-gray-500'}">
+                                ${myReaction ? `<span class="text-lg">${reactionIcons[myReaction]?.icon || '👍'}</span>` : '<i class="far fa-thumbs-up"></i>'}
+                                <span class="font-medium text-sm">Tetszik</span>
+                            </button>
+                        </div>
+                        <button onclick="document.getElementById('community-comment-${post._id}').focus()" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 transition text-gray-500">
+                            <i class="far fa-comment"></i>
+                            <span class="font-medium text-sm">Hozzászólás</span>
+                        </button>
+                    </div>
+                    <div class="p-4 border-t border-gray-100 dark:border-dark-300">
+                        ${(post.comments || []).slice(-3).map(c => `
+                            <div class="flex gap-2 mb-2">
+                                <img src="${getAvatar(c.author)}" class="w-8 h-8 rounded-full">
+                                <div class="bg-gray-100 dark:bg-dark-300 rounded-2xl px-3 py-2">
+                                    <p class="font-semibold text-xs text-gray-800 dark:text-white">${getUserName(c.author)}${getUserBadge(c.author)}</p>
+                                    <p class="text-sm text-gray-700 dark:text-gray-300">${formatPostContent(c.text)}</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                        <div class="flex gap-2 mt-2">
+                            <img src="${getAvatar(currentUser)}" class="w-8 h-8 rounded-full">
+                            <input type="text" id="community-comment-${post._id}" placeholder="Írj hozzászólást..." 
+                                class="flex-1 bg-gray-100 dark:bg-dark-300 rounded-full px-4 py-2 text-sm outline-none text-gray-800 dark:text-white"
+                                onkeypress="if(event.key==='Enter')addCommunityComment('${currentCommunity._id}', '${post._id}', this.value)">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error('Community posts error:', e);
+    }
+}
+
+// Community Modal Functions
+function openCreateCommunityModal() {
+    document.getElementById('createCommunityModal').classList.remove('hidden');
+}
+
+function closeCreateCommunityModal() {
+    document.getElementById('createCommunityModal').classList.add('hidden');
+    document.getElementById('newCommunityName').value = '';
+    document.getElementById('newCommunityDesc').value = '';
+    document.getElementById('newCommunityCover').value = '';
+}
+
+async function createCommunity() {
+    const name = document.getElementById('newCommunityName').value.trim();
+    const description = document.getElementById('newCommunityDesc').value.trim();
+    const cover = document.getElementById('newCommunityCover').value.trim();
+    const privacy = document.querySelector('input[name="communityPrivacy"]:checked').value;
+    const category = document.getElementById('newCommunityCategory').value;
+    
+    if (!name || name.length < 3) {
+        return toast('A csoport neve legalább 3 karakter legyen!', 'error');
+    }
+    
+    try {
+        const community = await api('/communities', {
+            method: 'POST',
+            body: JSON.stringify({ name, description, cover, privacy, category })
+        });
+        closeCreateCommunityModal();
+        toast('Csoport létrehozva!', 'success');
+        navigate('community', community._id);
+    } catch (e) {}
+}
+
+async function joinCommunity(communityId) {
+    try {
+        const result = await api(`/communities/${communityId}/join`, { method: 'POST' });
+        toast(result.message, 'success');
+        if (result.status === 'joined') {
+            navigate('community', communityId);
+        } else {
+            loadCommunities();
+        }
+    } catch (e) {}
+}
+
+async function leaveCommunity(communityId) {
+    if (!confirm('Biztosan kilépsz a csoportból?')) return;
+    try {
+        await api(`/communities/${communityId}/leave`, { method: 'POST' });
+        toast('Kiléptél a csoportból!', 'info');
+        navigate('communities');
+    } catch (e) {}
+}
+
+async function approveMember(communityId, userId) {
+    try {
+        await api(`/communities/${communityId}/approve/${userId}`, { method: 'POST' });
+        toast('Tag elfogadva!', 'success');
+        loadCommunityDetail(communityId);
+    } catch (e) {}
+}
+
+async function rejectMember(communityId, userId) {
+    try {
+        await api(`/communities/${communityId}/reject/${userId}`, { method: 'POST' });
+        toast('Kérelem elutasítva!', 'info');
+        loadCommunityDetail(communityId);
+    } catch (e) {}
+}
+
+async function deleteCommunity() {
+    if (!confirm('Biztosan törlöd ezt a csoportot? Ez nem visszavonható!')) return;
+    try {
+        await api(`/communities/${currentCommunity._id}`, { method: 'DELETE' });
+        toast('Csoport törölve!', 'success');
+        navigate('communities');
+    } catch (e) {}
+}
+
+// Community Post Functions
+function openCommunityPostModal() {
+    document.getElementById('communityPostModal').classList.remove('hidden');
+    document.getElementById('communityPostModalAvatar').src = getAvatar(currentUser);
+    document.getElementById('communityPostModalName').textContent = getUserName(currentUser);
+    document.getElementById('communityPostModalGroup').textContent = currentCommunity.name;
+    document.getElementById('communityPostContent').focus();
+}
+
+function closeCommunityPostModal() {
+    document.getElementById('communityPostModal').classList.add('hidden');
+    document.getElementById('communityPostContent').value = '';
+    document.getElementById('communityPostImagePreview').classList.add('hidden');
+}
+
+function previewCommunityPostImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('communityPostPreviewImg').src = e.target.result;
+            document.getElementById('communityPostImagePreview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removeCommunityPostImage() {
+    document.getElementById('communityPostImagePreview').classList.add('hidden');
+    document.getElementById('communityPostImageInput').value = '';
+}
+
+async function createCommunityPost() {
+    const content = document.getElementById('communityPostContent').value.trim();
+    const imageEl = document.getElementById('communityPostPreviewImg');
+    const hasImage = !document.getElementById('communityPostImagePreview').classList.contains('hidden');
+    
+    if (!content && !hasImage) {
+        return toast('Írj valamit vagy adj hozzá képet!', 'error');
+    }
+    
+    try {
+        let imageUrl = '';
+        if (hasImage) {
+            toast('Kép feltöltése...', 'info');
+            imageUrl = await uploadImage(imageEl.src);
+        }
+        
+        await api(`/communities/${currentCommunity._id}/posts`, {
+            method: 'POST',
+            body: JSON.stringify({ content, image: imageUrl })
+        });
+        
+        closeCommunityPostModal();
+        toast('Poszt közzétéve!', 'success');
+        loadCommunityPosts(currentCommunity._id);
+    } catch (e) {}
+}
+
+async function reactToCommunityPost(communityId, postId, reaction) {
+    try {
+        await api(`/communities/${communityId}/posts/${postId}/react`, {
+            method: 'POST',
+            body: JSON.stringify({ reaction })
+        });
+        loadCommunityPosts(communityId);
+    } catch (e) {}
+}
+
+async function addCommunityComment(communityId, postId, text) {
+    if (!text.trim()) return;
+    try {
+        await api(`/communities/${communityId}/posts/${postId}/comment`, {
+            method: 'POST',
+            body: JSON.stringify({ text })
+        });
+        document.getElementById(`community-comment-${postId}`).value = '';
+        loadCommunityPosts(communityId);
+    } catch (e) {}
+}
+
+async function deleteCommunityPost(communityId, postId) {
+    if (!confirm('Biztosan törlöd ezt a posztot?')) return;
+    try {
+        await api(`/communities/${communityId}/posts/${postId}`, { method: 'DELETE' });
+        toast('Poszt törölve!', 'success');
+        loadCommunityPosts(communityId);
+    } catch (e) {}
+}
+
+// Invite Members
+function openInviteMemberModal() {
+    document.getElementById('inviteMemberModal').classList.remove('hidden');
+    loadInviteFriendsList();
+}
+
+function closeInviteMemberModal() {
+    document.getElementById('inviteMemberModal').classList.add('hidden');
+}
+
+async function loadInviteFriendsList() {
+    const container = document.getElementById('inviteFriendsList');
+    const user = await api(`/users/${currentUser._id}`);
+    const friends = user.friends || [];
+    
+    if (!currentCommunity) return;
+    
+    const memberIds = currentCommunity.members?.map(m => m._id) || [];
+    const invitedIds = currentCommunity.invitedMembers || [];
+    
+    const invitableFriends = friends.filter(f => !memberIds.includes(f._id) && !invitedIds.includes(f._id));
+    
+    if (invitableFriends.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-4">Nincs meghívható barát</p>';
+        return;
+    }
+    
+    container.innerHTML = invitableFriends.map(f => `
+        <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-dark-300 rounded-lg invite-item">
+            <div class="flex items-center gap-2">
+                <img src="${getAvatar(f)}" class="w-10 h-10 rounded-full">
+                <span class="font-medium text-gray-800 dark:text-white text-sm">${getUserName(f)}</span>
+            </div>
+            <button onclick="inviteMember('${f._id}')" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition">
+                Meghívás
+            </button>
+        </div>
+    `).join('');
+}
+
+function filterInviteList(query) {
+    const items = document.querySelectorAll('.invite-item');
+    items.forEach(item => {
+        const name = item.querySelector('.font-medium').textContent.toLowerCase();
+        item.style.display = name.includes(query.toLowerCase()) ? '' : 'none';
+    });
+}
+
+async function inviteMember(userId) {
+    try {
+        await api(`/communities/${currentCommunity._id}/invite/${userId}`, { method: 'POST' });
+        toast('Meghívó elküldve!', 'success');
+        loadInviteFriendsList();
+    } catch (e) {}
+}
+
+// Show all members modal
+function showCommunityMembers() {
+    document.getElementById('communityMembersModal').classList.remove('hidden');
+    const container = document.getElementById('allCommunityMembers');
+    
+    const members = currentCommunity.members || [];
+    const admins = currentCommunity.admins?.map(a => a._id) || [];
+    const creatorId = currentCommunity.creator?._id;
+    
+    container.innerHTML = members.map(m => {
+        const isCreator = m._id === creatorId;
+        const isAdmin = admins.includes(m._id);
+        let roleText = '';
+        if (isCreator) roleText = '<span class="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-600 px-2 py-0.5 rounded-full ml-2">Létrehozó</span>';
+        else if (isAdmin) roleText = '<span class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-2 py-0.5 rounded-full ml-2">Admin</span>';
+        
+        return `
+            <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-dark-300 rounded-lg">
+                <div class="flex items-center gap-2 cursor-pointer" onclick="navigateToProfile('${m.username || m._id}'); closeCommunityMembersModal();">
+                    <img src="${getAvatar(m)}" class="w-10 h-10 rounded-full">
+                    <div>
+                        <span class="font-medium text-gray-800 dark:text-white text-sm">${getUserName(m)}${getUserBadge(m)}</span>
+                        ${roleText}
+                    </div>
+                </div>
+                ${m.isOnline ? '<span class="w-2 h-2 bg-green-500 rounded-full"></span>' : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+function closeCommunityMembersModal() {
+    document.getElementById('communityMembersModal').classList.add('hidden');
+}
+
+function openEditCommunityModal() {
+    // Reuse create modal for editing
+    document.getElementById('createCommunityModal').classList.remove('hidden');
+    document.getElementById('newCommunityName').value = currentCommunity.name;
+    document.getElementById('newCommunityDesc').value = currentCommunity.description || '';
+    document.getElementById('newCommunityCover').value = currentCommunity.cover || '';
+    document.getElementById('newCommunityCategory').value = currentCommunity.category || 'Általános';
+    
+    const privacyRadio = document.querySelector(`input[name="communityPrivacy"][value="${currentCommunity.privacy}"]`);
+    if (privacyRadio) privacyRadio.checked = true;
 }
 </script>
 
