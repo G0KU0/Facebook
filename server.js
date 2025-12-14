@@ -167,6 +167,54 @@ setTimeout(cleanOldGroupMessages, 5000);
 
 const Group = mongoose.model('Group', groupSchema);
 
+// Közösségi csoport séma (mint Facebook csoportok)
+const communitySchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    description: { type: String, default: '' },
+    cover: { type: String, default: '' },
+    icon: { type: String, default: '' },
+    privacy: { type: String, enum: ['public', 'private', 'hidden'], default: 'public' },
+    // public = bárki csatlakozhat, private = kérelem kell, hidden = csak meghívóval
+    creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    admins: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    moderators: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    pendingMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Csatlakozási kérelmek
+    invitedMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Meghívottak
+    bannedMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    isOfficial: { type: Boolean, default: false }, // Tulajdonos hivatalos csoportja
+    rules: [{ type: String }], // Csoport szabályok
+    category: { type: String, default: 'Általános' },
+    memberCount: { type: Number, default: 1 }
+}, { timestamps: true });
+
+// Közösségi csoport poszt séma
+const communityPostSchema = new mongoose.Schema({
+    community: { type: mongoose.Schema.Types.ObjectId, ref: 'Community', required: true },
+    author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    content: { type: String },
+    image: { type: String },
+    feeling: { type: String },
+    isPinned: { type: Boolean, default: false },
+    isAnnouncement: { type: Boolean, default: false },
+    reactions: {
+        like: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        love: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        haha: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        wow: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        sad: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        angry: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    },
+    comments: [{
+        author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        text: String,
+        createdAt: { type: Date, default: Date.now }
+    }]
+}, { timestamps: true });
+
+const Community = mongoose.model('Community', communitySchema);
+const CommunityPost = mongoose.model('CommunityPost', communityPostSchema);
+
 // ============ RANDOM USERNAME GENERÁLÁS ============
 function generateRandomUsername(baseName = 'user') {
     const cleanName = baseName.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1223,6 +1271,554 @@ app.post('/api/groups/:id/members', auth, async (req, res) => {
         
         await group.save();
         res.json({ message: 'Tagok hozzáadva!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============ COMMUNITY (KÖZÖSSÉGI CSOPORT) ROUTES ============
+
+// Összes közösség lekérése
+app.get('/api/communities', auth, async (req, res) => {
+    try {
+        const communities = await Community.find({
+            $or: [
+                { privacy: 'public' },
+                { privacy: 'private' },
+                { members: req.user._id },
+                { creator: req.user._id }
+            ]
+        })
+        .populate('creator', 'firstName lastName username avatar isOwner isAdmin')
+        .populate('members', 'firstName lastName username avatar isOnline')
+        .sort({ memberCount: -1, createdAt: -1 });
+        
+        res.json(communities);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Saját közösségeim
+app.get('/api/communities/my', auth, async (req, res) => {
+    try {
+        const communities = await Community.find({ members: req.user._id })
+            .populate('creator', 'firstName lastName username avatar isOwner isAdmin')
+            .populate('members', 'firstName lastName username avatar')
+            .sort({ createdAt: -1 });
+        res.json(communities);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Felfedezés - ajánlott közösségek
+app.get('/api/communities/discover', auth, async (req, res) => {
+    try {
+        const communities = await Community.find({
+            members: { $ne: req.user._id },
+            privacy: { $in: ['public', 'private'] },
+            bannedMembers: { $ne: req.user._id }
+        })
+        .populate('creator', 'firstName lastName username avatar isOwner isAdmin')
+        .populate('members', 'firstName lastName username avatar')
+        .sort({ memberCount: -1 })
+        .limit(20);
+        res.json(communities);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Egy közösség lekérése
+app.get('/api/communities/:id', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.id)
+            .populate('creator', 'firstName lastName username avatar isOwner isAdmin')
+            .populate('admins', 'firstName lastName username avatar isOwner isAdmin')
+            .populate('moderators', 'firstName lastName username avatar')
+            .populate('members', 'firstName lastName username avatar isOnline')
+            .populate('pendingMembers', 'firstName lastName username avatar');
+        
+        if (!community) return res.status(404).json({ error: 'Közösség nem található!' });
+        
+        // Ha rejtett és nem tag, ne mutassa
+        if (community.privacy === 'hidden' && !community.members.some(m => m._id.toString() === req.user._id.toString())) {
+            return res.status(404).json({ error: 'Közösség nem található!' });
+        }
+        
+        res.json(community);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Közösség létrehozása
+app.post('/api/communities', auth, async (req, res) => {
+    try {
+        const { name, description, cover, icon, privacy, category, rules } = req.body;
+        
+        if (!name || name.length < 3) {
+            return res.status(400).json({ error: 'A csoport neve legalább 3 karakter legyen!' });
+        }
+        
+        const community = await Community.create({
+            name,
+            description,
+            cover,
+            icon,
+            privacy: privacy || 'public',
+            category: category || 'Általános',
+            rules: rules || [],
+            creator: req.user._id,
+            admins: [req.user._id],
+            members: [req.user._id],
+            isOfficial: req.user.isOwner, // Ha tulajdonos hozza létre, hivatalos
+            memberCount: 1
+        });
+        
+        await community.populate('creator', 'firstName lastName username avatar isOwner isAdmin');
+        res.json(community);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Közösség szerkesztése
+app.put('/api/communities/:id', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.id);
+        if (!community) return res.status(404).json({ error: 'Közösség nem található!' });
+        
+        // Csak admin szerkeszthet
+        if (!community.admins.some(a => a.toString() === req.user._id.toString()) && !req.user.isOwner) {
+            return res.status(403).json({ error: 'Nincs jogosultságod!' });
+        }
+        
+        const { name, description, cover, icon, privacy, category, rules } = req.body;
+        
+        community.name = name || community.name;
+        community.description = description !== undefined ? description : community.description;
+        community.cover = cover !== undefined ? cover : community.cover;
+        community.icon = icon !== undefined ? icon : community.icon;
+        community.privacy = privacy || community.privacy;
+        community.category = category || community.category;
+        community.rules = rules || community.rules;
+        
+        await community.save();
+        await community.populate('creator', 'firstName lastName username avatar isOwner isAdmin');
+        
+        res.json(community);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Közösség törlése
+app.delete('/api/communities/:id', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.id);
+        if (!community) return res.status(404).json({ error: 'Közösség nem található!' });
+        
+        // Csak creator vagy owner törölhet
+        if (community.creator.toString() !== req.user._id.toString() && !req.user.isOwner) {
+            return res.status(403).json({ error: 'Nincs jogosultságod!' });
+        }
+        
+        // Posztok törlése
+        await CommunityPost.deleteMany({ community: req.params.id });
+        await community.deleteOne();
+        
+        res.json({ message: 'Közösség törölve!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Csatlakozás közösséghez
+app.post('/api/communities/:id/join', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.id);
+        if (!community) return res.status(404).json({ error: 'Közösség nem található!' });
+        
+        // Már tag?
+        if (community.members.includes(req.user._id)) {
+            return res.status(400).json({ error: 'Már tag vagy!' });
+        }
+        
+        // Tiltva van?
+        if (community.bannedMembers.includes(req.user._id)) {
+            return res.status(403).json({ error: 'Ki vagy tiltva ebből a közösségből!' });
+        }
+        
+        if (community.privacy === 'public') {
+            // Nyilvános - azonnal csatlakozhat
+            community.members.push(req.user._id);
+            community.memberCount = community.members.length;
+            await community.save();
+            res.json({ message: 'Csatlakoztál a közösséghez!', status: 'joined' });
+        } else if (community.privacy === 'private') {
+            // Privát - kérelem
+            if (community.pendingMembers.includes(req.user._id)) {
+                return res.status(400).json({ error: 'Már kérelmet küldtél!' });
+            }
+            community.pendingMembers.push(req.user._id);
+            await community.save();
+            
+            // Értesítés az adminoknak
+            for (const adminId of community.admins) {
+                await Notification.create({
+                    user: adminId,
+                    text: `${req.user.firstName} ${req.user.lastName} csatlakozni szeretne: ${community.name}`,
+                    type: 'friend'
+                });
+                io.to(adminId.toString()).emit('notification');
+            }
+            
+            res.json({ message: 'Csatlakozási kérelem elküldve!', status: 'pending' });
+        } else {
+            // Rejtett - csak meghívóval
+            if (community.invitedMembers.includes(req.user._id)) {
+                community.members.push(req.user._id);
+                community.invitedMembers = community.invitedMembers.filter(m => m.toString() !== req.user._id.toString());
+                community.memberCount = community.members.length;
+                await community.save();
+                res.json({ message: 'Csatlakoztál a közösséghez!', status: 'joined' });
+            } else {
+                return res.status(403).json({ error: 'Csak meghívóval csatlakozhatsz!' });
+            }
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Kilépés közösségből
+app.post('/api/communities/:id/leave', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.id);
+        if (!community) return res.status(404).json({ error: 'Közösség nem található!' });
+        
+        if (community.creator.toString() === req.user._id.toString()) {
+            return res.status(400).json({ error: 'A létrehozó nem léphet ki! Töröld a közösséget.' });
+        }
+        
+        community.members = community.members.filter(m => m.toString() !== req.user._id.toString());
+        community.admins = community.admins.filter(a => a.toString() !== req.user._id.toString());
+        community.moderators = community.moderators.filter(m => m.toString() !== req.user._id.toString());
+        community.memberCount = community.members.length;
+        await community.save();
+        
+        res.json({ message: 'Kiléptél a közösségből!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Csatlakozási kérelem elfogadása
+app.post('/api/communities/:id/approve/:userId', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.id);
+        if (!community) return res.status(404).json({ error: 'Közösség nem található!' });
+        
+        // Csak admin fogadhat el
+        if (!community.admins.some(a => a.toString() === req.user._id.toString()) && 
+            !community.moderators.some(m => m.toString() === req.user._id.toString())) {
+            return res.status(403).json({ error: 'Nincs jogosultságod!' });
+        }
+        
+        const userId = req.params.userId;
+        
+        if (!community.pendingMembers.some(p => p.toString() === userId)) {
+            return res.status(400).json({ error: 'Nincs ilyen kérelem!' });
+        }
+        
+        community.pendingMembers = community.pendingMembers.filter(p => p.toString() !== userId);
+        community.members.push(userId);
+        community.memberCount = community.members.length;
+        await community.save();
+        
+        // Értesítés
+        await Notification.create({
+            user: userId,
+            text: `Elfogadták a csatlakozási kérelmedet: ${community.name}`,
+            type: 'friend'
+        });
+        io.to(userId).emit('notification');
+        
+        res.json({ message: 'Tag elfogadva!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Csatlakozási kérelem elutasítása
+app.post('/api/communities/:id/reject/:userId', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.id);
+        if (!community) return res.status(404).json({ error: 'Közösség nem található!' });
+        
+        if (!community.admins.some(a => a.toString() === req.user._id.toString()) && 
+            !community.moderators.some(m => m.toString() === req.user._id.toString())) {
+            return res.status(403).json({ error: 'Nincs jogosultságod!' });
+        }
+        
+        community.pendingMembers = community.pendingMembers.filter(p => p.toString() !== req.params.userId);
+        await community.save();
+        
+        res.json({ message: 'Kérelem elutasítva!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Tag meghívása
+app.post('/api/communities/:id/invite/:userId', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.id);
+        if (!community) return res.status(404).json({ error: 'Közösség nem található!' });
+        
+        if (!community.members.some(m => m.toString() === req.user._id.toString())) {
+            return res.status(403).json({ error: 'Csak tagok hívhatnak meg!' });
+        }
+        
+        const userId = req.params.userId;
+        
+        if (community.members.some(m => m.toString() === userId)) {
+            return res.status(400).json({ error: 'Már tag!' });
+        }
+        
+        if (community.invitedMembers.some(i => i.toString() === userId)) {
+            return res.status(400).json({ error: 'Már meg van hívva!' });
+        }
+        
+        community.invitedMembers.push(userId);
+        await community.save();
+        
+        // Értesítés
+        await Notification.create({
+            user: userId,
+            text: `${req.user.firstName} ${req.user.lastName} meghívott a ${community.name} közösségbe`,
+            type: 'friend'
+        });
+        io.to(userId).emit('notification');
+        
+        res.json({ message: 'Meghívó elküldve!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Tag eltávolítása / kitiltás
+app.post('/api/communities/:id/remove/:userId', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.id);
+        if (!community) return res.status(404).json({ error: 'Közösség nem található!' });
+        
+        if (!community.admins.some(a => a.toString() === req.user._id.toString()) && !req.user.isOwner) {
+            return res.status(403).json({ error: 'Nincs jogosultságod!' });
+        }
+        
+        const userId = req.params.userId;
+        const { ban } = req.body;
+        
+        if (community.creator.toString() === userId) {
+            return res.status(400).json({ error: 'A létrehozót nem lehet eltávolítani!' });
+        }
+        
+        community.members = community.members.filter(m => m.toString() !== userId);
+        community.admins = community.admins.filter(a => a.toString() !== userId);
+        community.moderators = community.moderators.filter(m => m.toString() !== userId);
+        community.memberCount = community.members.length;
+        
+        if (ban) {
+            community.bannedMembers.push(userId);
+        }
+        
+        await community.save();
+        
+        res.json({ message: ban ? 'Tag kitiltva!' : 'Tag eltávolítva!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Admin/moderátor kinevezése
+app.post('/api/communities/:id/promote/:userId', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.id);
+        if (!community) return res.status(404).json({ error: 'Közösség nem található!' });
+        
+        if (!community.admins.some(a => a.toString() === req.user._id.toString())) {
+            return res.status(403).json({ error: 'Nincs jogosultságod!' });
+        }
+        
+        const { role } = req.body; // 'admin' vagy 'moderator'
+        const userId = req.params.userId;
+        
+        if (!community.members.some(m => m.toString() === userId)) {
+            return res.status(400).json({ error: 'Nem tag!' });
+        }
+        
+        if (role === 'admin') {
+            if (!community.admins.some(a => a.toString() === userId)) {
+                community.admins.push(userId);
+            }
+        } else if (role === 'moderator') {
+            if (!community.moderators.some(m => m.toString() === userId)) {
+                community.moderators.push(userId);
+            }
+        }
+        
+        await community.save();
+        res.json({ message: `${role === 'admin' ? 'Admin' : 'Moderátor'} kinevezve!` });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Közösség posztok lekérése
+app.get('/api/communities/:id/posts', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.id);
+        if (!community) return res.status(404).json({ error: 'Közösség nem található!' });
+        
+        // Ha privát és nem tag, ne mutassa
+        if ((community.privacy === 'private' || community.privacy === 'hidden') && 
+            !community.members.some(m => m.toString() === req.user._id.toString())) {
+            return res.status(403).json({ error: 'Csak tagok láthatják a posztokat!' });
+        }
+        
+        const posts = await CommunityPost.find({ community: req.params.id })
+            .populate('author', 'firstName lastName username avatar isOwner isAdmin')
+            .populate('comments.author', 'firstName lastName username avatar isOwner isAdmin')
+            .sort({ isPinned: -1, createdAt: -1 });
+        
+        res.json(posts);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Poszt létrehozása közösségben
+app.post('/api/communities/:id/posts', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.id);
+        if (!community) return res.status(404).json({ error: 'Közösség nem található!' });
+        
+        if (!community.members.some(m => m.toString() === req.user._id.toString())) {
+            return res.status(403).json({ error: 'Csak tagok posztolhatnak!' });
+        }
+        
+        const { content, image, feeling, isAnnouncement } = req.body;
+        
+        const post = await CommunityPost.create({
+            community: req.params.id,
+            author: req.user._id,
+            content,
+            image,
+            feeling,
+            isAnnouncement: isAnnouncement && community.admins.some(a => a.toString() === req.user._id.toString())
+        });
+        
+        await post.populate('author', 'firstName lastName username avatar isOwner isAdmin');
+        
+        // Socket értesítés
+        io.to(`community-${req.params.id}`).emit('newCommunityPost', post);
+        
+        res.json(post);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Közösségi poszt törlése
+app.delete('/api/communities/:communityId/posts/:postId', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.communityId);
+        const post = await CommunityPost.findById(req.params.postId);
+        
+        if (!post) return res.status(404).json({ error: 'Poszt nem található!' });
+        
+        const isAuthor = post.author.toString() === req.user._id.toString();
+        const isAdmin = community.admins.some(a => a.toString() === req.user._id.toString());
+        const isModerator = community.moderators.some(m => m.toString() === req.user._id.toString());
+        
+        if (!isAuthor && !isAdmin && !isModerator && !req.user.isOwner) {
+            return res.status(403).json({ error: 'Nincs jogosultságod!' });
+        }
+        
+        await post.deleteOne();
+        res.json({ message: 'Poszt törölve!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Közösségi poszt reakció
+app.post('/api/communities/:communityId/posts/:postId/react', auth, async (req, res) => {
+    try {
+        const post = await CommunityPost.findById(req.params.postId);
+        if (!post) return res.status(404).json({ error: 'Poszt nem található!' });
+        
+        const { reaction } = req.body;
+        const userId = req.user._id;
+        
+        if (!post.reactions) {
+            post.reactions = { like: [], love: [], haha: [], wow: [], sad: [], angry: [] };
+        }
+        
+        ['like', 'love', 'haha', 'wow', 'sad', 'angry'].forEach(type => {
+            if (!post.reactions[type]) post.reactions[type] = [];
+            const idx = post.reactions[type].indexOf(userId);
+            if (idx > -1) post.reactions[type].splice(idx, 1);
+        });
+        
+        const alreadyReacted = post.reactions[reaction]?.includes(userId);
+        if (!alreadyReacted) {
+            post.reactions[reaction].push(userId);
+        }
+        
+        await post.save();
+        await post.populate('author', 'firstName lastName username avatar isOwner isAdmin');
+        
+        res.json(post);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Közösségi poszt komment
+app.post('/api/communities/:communityId/posts/:postId/comment', auth, async (req, res) => {
+    try {
+        const post = await CommunityPost.findById(req.params.postId);
+        if (!post) return res.status(404).json({ error: 'Poszt nem található!' });
+        
+        post.comments.push({ author: req.user._id, text: req.body.text });
+        await post.save();
+        
+        await post.populate('author', 'firstName lastName username avatar isOwner isAdmin');
+        await post.populate('comments.author', 'firstName lastName username avatar isOwner isAdmin');
+        
+        res.json(post);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Poszt kitűzése
+app.post('/api/communities/:communityId/posts/:postId/pin', auth, async (req, res) => {
+    try {
+        const community = await Community.findById(req.params.communityId);
+        if (!community.admins.some(a => a.toString() === req.user._id.toString())) {
+            return res.status(403).json({ error: 'Nincs jogosultságod!' });
+        }
+        
+        const post = await CommunityPost.findById(req.params.postId);
+        post.isPinned = !post.isPinned;
+        await post.save();
+        
+        res.json({ message: post.isPinned ? 'Poszt kitűzve!' : 'Kitűzés eltávolítva!' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
