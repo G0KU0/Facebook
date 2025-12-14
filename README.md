@@ -66,6 +66,20 @@ Egy modern, full-stack közösségi oldal MongoDB adatbázissal, Node.js szerver
 - Lájk, komment, barátkérelem értesítések
 - Valós idejű értesítések badge-ekkel
 
+### 👥 Közösségi Csoportok (mint Facebook Groups)
+- **Csoport létrehozása** egyedi névvel és borítóképpel
+- **3 féle adatvédelem:**
+  - 🌐 **Nyilvános** - bárki csatlakozhat
+  - 🔒 **Privát** - csatlakozáshoz kérelem szükséges
+  - 👁️ **Rejtett** - csak meghívóval
+- **Posztolás** a csoportba (szöveg + kép)
+- **Tagok meghívása** barátok közül
+- **Csatlakozási kérelmek** kezelése (elfogadás/elutasítás)
+- **Admin panel** a csoport kezeléséhez
+- **Hivatalos csoport** jelvény (tulajdonos csoportjainak)
+- **Csoport szabályok** megjelenítése
+- **Kitűzött posztok**
+
 ### 🛡️ Admin Panel
 - Statisztikák (felhasználók, posztok, üzenetek)
 - Felhasználók listázása és törlése
