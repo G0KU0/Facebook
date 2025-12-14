@@ -251,9 +251,30 @@
                     </div>
                     <div>
                         <input type="password" id="regPassword" placeholder="Jelszó (min. 6 karakter)" 
-                            class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 transition outline-none"
-                            onkeypress="if(event.key==='Enter')register()">
+                            class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-300 rounded-xl text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 transition outline-none">
                     </div>
+                    
+                    <!-- Robot ellenőrzés (CAPTCHA) -->
+                    <div class="bg-gray-50 dark:bg-dark-300 rounded-xl p-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-robot text-white"></i>
+                            </div>
+                            <span class="text-gray-700 dark:text-gray-300 font-medium text-sm">Igazold, hogy nem vagy robot!</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div id="captchaQuestion" class="flex-1 bg-white dark:bg-dark-400 rounded-lg px-4 py-2 text-center">
+                                <span class="text-lg font-bold text-gray-800 dark:text-white" id="captchaText">5 + 3 = ?</span>
+                            </div>
+                            <input type="number" id="captchaAnswer" placeholder="?" 
+                                class="w-20 px-4 py-2 bg-white dark:bg-dark-400 rounded-lg text-gray-800 dark:text-white border-2 border-transparent focus:border-blue-500 transition outline-none text-center font-bold text-lg"
+                                onkeypress="if(event.key==='Enter')register()">
+                            <button type="button" onclick="generateCaptcha()" class="w-10 h-10 bg-gray-200 dark:bg-dark-400 rounded-lg flex items-center justify-center hover:bg-gray-300 dark:hover:bg-dark-500 transition" title="Új feladat">
+                                <i class="fas fa-sync-alt text-gray-600 dark:text-gray-400"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
                     <button onclick="register()" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold transition btn-hover">
                         Regisztráció
                     </button>
@@ -1537,6 +1558,44 @@ async function uploadImage(base64Image) {
 }
 
 // ============ AUTH ============
+let captchaAnswer = 0;
+
+function generateCaptcha() {
+    const operations = [
+        { op: '+', calc: (a, b) => a + b },
+        { op: '-', calc: (a, b) => a - b },
+        { op: '×', calc: (a, b) => a * b }
+    ];
+    
+    const opIndex = Math.floor(Math.random() * operations.length);
+    const operation = operations[opIndex];
+    
+    let num1, num2;
+    
+    if (opIndex === 0) { // Összeadás
+        num1 = Math.floor(Math.random() * 20) + 1;
+        num2 = Math.floor(Math.random() * 20) + 1;
+    } else if (opIndex === 1) { // Kivonás - num1 legyen nagyobb
+        num1 = Math.floor(Math.random() * 20) + 10;
+        num2 = Math.floor(Math.random() * 10) + 1;
+    } else { // Szorzás - kisebb számok
+        num1 = Math.floor(Math.random() * 10) + 1;
+        num2 = Math.floor(Math.random() * 10) + 1;
+    }
+    
+    captchaAnswer = operation.calc(num1, num2);
+    
+    const captchaText = document.getElementById('captchaText');
+    if (captchaText) {
+        captchaText.textContent = `${num1} ${operation.op} ${num2} = ?`;
+    }
+    
+    const answerInput = document.getElementById('captchaAnswer');
+    if (answerInput) {
+        answerInput.value = '';
+    }
+}
+
 function showLogin() {
     document.getElementById('loginForm').classList.remove('hidden');
     document.getElementById('registerForm').classList.add('hidden');
@@ -1545,6 +1604,7 @@ function showLogin() {
 function showRegister() {
     document.getElementById('loginForm').classList.add('hidden');
     document.getElementById('registerForm').classList.remove('hidden');
+    generateCaptcha(); // Generálunk egy új CAPTCHA-t
 }
 
 async function login() {
@@ -1619,6 +1679,7 @@ async function register() {
     const username = document.getElementById('regUsername').value.trim();
     const birthDate = document.getElementById('regBirthDate').value;
     const password = document.getElementById('regPassword').value;
+    const userCaptchaAnswer = document.getElementById('captchaAnswer').value;
     
     if (!firstName || !lastName || !username || !birthDate || !password) {
         return toast('Töltsd ki az összes mezőt!', 'error');
@@ -1632,6 +1693,17 @@ async function register() {
         return toast('A jelszó minimum 6 karakter legyen!', 'error');
     }
     
+    // CAPTCHA ellenőrzés
+    if (!userCaptchaAnswer) {
+        return toast('Oldd meg a matematikai feladatot!', 'error');
+    }
+    
+    if (parseInt(userCaptchaAnswer) !== captchaAnswer) {
+        toast('Hibás válasz! Próbáld újra.', 'error');
+        generateCaptcha(); // Új feladat generálása
+        return;
+    }
+    
     try {
         const data = await api('/auth/register', {
             method: 'POST',
@@ -1643,7 +1715,9 @@ async function register() {
         await initApp();
         navigate('feed');
         toast('Sikeres regisztráció! Üdvözlünk a SocialBook-on!', 'success');
-    } catch (e) {}
+    } catch (e) {
+        generateCaptcha(); // Új feladat hiba esetén is
+    }
 }
 
 function logout() {
@@ -3788,6 +3862,9 @@ async function initializeApp() {
         hideLoadingScreen();
     }
 }
+
+// CAPTCHA generálás az oldal betöltésekor
+generateCaptcha();
 
 // Indítás
 initializeApp();
