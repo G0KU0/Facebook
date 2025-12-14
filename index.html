@@ -3870,8 +3870,6 @@ async function showCommunitiesTab(tab) {
             const privacyIcon = c.privacy === 'public' ? 'fa-globe' : c.privacy === 'private' ? 'fa-lock' : 'fa-eye-slash';
             const privacyText = c.privacy === 'public' ? 'Nyilvános' : c.privacy === 'private' ? 'Privát' : 'Rejtett';
             const creatorName = getUserName(c.creator);
-            const officialBadge = c.isOfficial ? '<span class="ml-2 text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-check-circle mr-1"></i>Hivatalos</span>' : '';
-            const officialBadge = c.isOfficial ? '<span class="ml-2 text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-check-circle mr-1"></i>Hivatalos</span>' : '';
             
             return `
                 <div class="bg-white dark:bg-dark-200 rounded-xl shadow overflow-hidden hover:shadow-lg transition cursor-pointer" onclick="navigate('community', '${c._id}')">
