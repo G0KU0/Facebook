@@ -54,7 +54,17 @@ const userSchema = new mongoose.Schema({
     isAdmin: { type: Boolean, default: false },
     isOnline: { type: Boolean, default: false },
     lastSeen: { type: Date, default: Date.now },
-    lastUsernameChange: { type: Date, default: null }
+    lastUsernameChange: { type: Date, default: null },
+    // Admin adatok
+    registrationIP: { type: String, default: '' },
+    lastLoginIP: { type: String, default: '' },
+    lastLoginAt: { type: Date, default: null },
+    loginCount: { type: Number, default: 0 },
+    deviceInfo: { type: String, default: '' },
+    isBanned: { type: Boolean, default: false },
+    banReason: { type: String, default: '' },
+    bannedAt: { type: Date, default: null },
+    bannedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
 // Virtuális mező a teljes névhez
@@ -326,6 +336,15 @@ const adminAuth = async (req, res, next) => {
 
 // ============ AUTH ROUTES ============
 
+// IP cím lekérése
+function getClientIP(req) {
+    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
+           req.headers['x-real-ip'] || 
+           req.connection?.remoteAddress || 
+           req.socket?.remoteAddress || 
+           'Ismeretlen';
+}
+
 // Regisztráció
 app.post('/api/auth/register', async (req, res) => {
     try {
@@ -370,6 +389,9 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'A felhasználónév 3-30 karakter hosszú legyen!' });
         }
 
+        const clientIP = getClientIP(req);
+        const deviceInfo = req.headers['user-agent'] || 'Ismeretlen eszköz';
+
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.create({
             firstName: firstName.trim(),
@@ -377,7 +399,12 @@ app.post('/api/auth/register', async (req, res) => {
             username: username.toLowerCase(),
             birthDate: birth,
             password: hashedPassword,
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=random&size=200`
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=random&size=200`,
+            registrationIP: clientIP,
+            lastLoginIP: clientIP,
+            lastLoginAt: new Date(),
+            loginCount: 1,
+            deviceInfo: deviceInfo
         });
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'titkos_kulcs', { expiresIn: '7d' });
@@ -404,10 +431,22 @@ app.post('/api/auth/login', async (req, res) => {
         const user = await User.findOne({ username: username.toLowerCase() });
         if (!user) return res.status(400).json({ error: 'Hibás felhasználónév vagy jelszó!' });
 
+        // Ellenőrizzük, hogy ki van-e tiltva
+        if (user.isBanned) {
+            return res.status(403).json({ error: `A fiókod ki van tiltva! Ok: ${user.banReason || 'Nincs megadva'}` });
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: 'Hibás felhasználónév vagy jelszó!' });
 
+        const clientIP = getClientIP(req);
+        const deviceInfo = req.headers['user-agent'] || 'Ismeretlen eszköz';
+
         user.isOnline = true;
+        user.lastLoginIP = clientIP;
+        user.lastLoginAt = new Date();
+        user.loginCount = (user.loginCount || 0) + 1;
+        user.deviceInfo = deviceInfo;
         await user.save();
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'titkos_kulcs', { expiresIn: '7d' });
@@ -1876,6 +1915,62 @@ app.post('/api/admin/toggle-admin/:id', auth, async (req, res) => {
             message: user.isAdmin ? 'Admin jog megadva!' : 'Admin jog elvéve!',
             user: { ...user.toObject(), password: undefined }
         });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Felhasználó tiltása (csak Admin/Owner)
+app.post('/api/admin/ban/:id', auth, adminAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ error: 'Felhasználó nem található!' });
+        if (user.isOwner) return res.status(403).json({ error: 'A tulajdonos nem tiltható ki!' });
+        if (user.isAdmin && !req.user.isOwner) {
+            return res.status(403).json({ error: 'Csak a tulajdonos tilthat ki admint!' });
+        }
+        
+        const { reason } = req.body;
+        
+        user.isBanned = true;
+        user.banReason = reason || 'Nincs megadva';
+        user.bannedAt = new Date();
+        user.bannedBy = req.user._id;
+        user.isOnline = false;
+        await user.save();
+        
+        res.json({ message: 'Felhasználó kitiltva!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Felhasználó tiltás feloldása (csak Admin/Owner)
+app.post('/api/admin/unban/:id', auth, adminAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ error: 'Felhasználó nem található!' });
+        
+        user.isBanned = false;
+        user.banReason = '';
+        user.bannedAt = null;
+        user.bannedBy = null;
+        await user.save();
+        
+        res.json({ message: 'Tiltás feloldva!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Részletes felhasználó adatok lekérése (csak Admin)
+app.get('/api/admin/users/:id/details', auth, adminAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id)
+            .select('-password')
+            .populate('bannedBy', 'firstName lastName username');
+        if (!user) return res.status(404).json({ error: 'Felhasználó nem található!' });
+        res.json(user);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
