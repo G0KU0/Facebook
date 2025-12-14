@@ -696,9 +696,39 @@
                 <img id="postModalAvatar" src="" class="w-10 h-10 rounded-full">
                 <div>
                     <p id="postModalName" class="font-semibold text-gray-800 dark:text-white text-sm"></p>
-                    <p class="text-xs text-gray-500"><i class="fas fa-globe-americas mr-1"></i>Nyilvános</p>
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleAudienceDropdown()" class="flex items-center gap-1 text-xs bg-gray-100 dark:bg-dark-300 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                            <i id="audienceIcon" class="fas fa-globe-americas text-gray-600 dark:text-gray-400"></i>
+                            <span id="audienceText" class="text-gray-600 dark:text-gray-400">Nyilvános</span>
+                            <i class="fas fa-caret-down text-gray-500"></i>
+                        </button>
+                        <div id="audienceDropdown" class="hidden absolute mt-20 bg-white dark:bg-dark-300 rounded-lg shadow-lg border border-gray-200 dark:border-dark-400 py-1 z-10">
+                            <button onclick="setAudience('public')" class="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-dark-400 text-left">
+                                <i class="fas fa-globe-americas text-gray-600 dark:text-gray-400 w-5"></i>
+                                <span class="text-gray-800 dark:text-white text-sm">Nyilvános</span>
+                            </button>
+                            <button onclick="setAudience('friends')" class="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-dark-400 text-left">
+                                <i class="fas fa-user-friends text-gray-600 dark:text-gray-400 w-5"></i>
+                                <span class="text-gray-800 dark:text-white text-sm">Barátok</span>
+                            </button>
+                            <button onclick="setAudience('private')" class="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-dark-400 text-left">
+                                <i class="fas fa-lock text-gray-600 dark:text-gray-400 w-5"></i>
+                                <span class="text-gray-800 dark:text-white text-sm">Csak én</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
+            
+            <!-- Érzés/Feeling megjelenítés -->
+            <div id="selectedFeeling" class="hidden mb-3 flex items-center gap-2">
+                <span class="text-gray-500 text-sm">Érzés:</span>
+                <span id="feelingText" class="text-gray-800 dark:text-white text-sm"></span>
+                <button onclick="removeFeeling()" class="text-gray-400 hover:text-red-500">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </div>
+            
             <textarea id="postContent" rows="4" placeholder="Mi jár a fejedben?" 
                 class="w-full bg-transparent text-gray-800 dark:text-white text-lg resize-none outline-none placeholder-gray-400"></textarea>
             <div id="postImagePreview" class="hidden mt-4 relative">
@@ -712,18 +742,61 @@
             <div class="flex items-center justify-between p-3 border border-gray-200 dark:border-dark-300 rounded-lg mb-4">
                 <span class="text-gray-700 dark:text-gray-300 font-medium text-sm">Hozzáadás a bejegyzéshez</span>
                 <div class="flex gap-1">
-                    <label class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full cursor-pointer transition">
+                    <label class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full cursor-pointer transition" title="Kép">
                         <i class="fas fa-image text-green-500"></i>
                         <input type="file" id="postImageInput" accept="image/*" class="hidden" onchange="previewPostImage(this)">
                     </label>
-                    <button class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full transition">
+                    <button class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full transition" title="Személy megjelölése">
                         <i class="fas fa-user-tag text-blue-500"></i>
                     </button>
-                    <button class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full transition">
+                    <button onclick="toggleFeelingPicker()" class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full transition" title="Érzés/Tevékenység">
                         <i class="fas fa-smile text-yellow-500"></i>
+                    </button>
+                    <button class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-dark-300 rounded-full transition" title="Hely megjelölése">
+                        <i class="fas fa-map-marker-alt text-red-500"></i>
                     </button>
                 </div>
             </div>
+            
+            <!-- Érzés választó -->
+            <div id="feelingPicker" class="hidden mb-4 p-3 bg-gray-50 dark:bg-dark-300 rounded-lg">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Hogy érzed magad?</p>
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="selectFeeling('😊 boldog')" class="text-center p-2 hover:bg-white dark:hover:bg-dark-400 rounded-lg transition">
+                        <span class="text-2xl">😊</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">boldog</p>
+                    </button>
+                    <button onclick="selectFeeling('😍 szerelmes')" class="text-center p-2 hover:bg-white dark:hover:bg-dark-400 rounded-lg transition">
+                        <span class="text-2xl">😍</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">szerelmes</p>
+                    </button>
+                    <button onclick="selectFeeling('😢 szomorú')" class="text-center p-2 hover:bg-white dark:hover:bg-dark-400 rounded-lg transition">
+                        <span class="text-2xl">😢</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">szomorú</p>
+                    </button>
+                    <button onclick="selectFeeling('😴 fáradt')" class="text-center p-2 hover:bg-white dark:hover:bg-dark-400 rounded-lg transition">
+                        <span class="text-2xl">😴</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">fáradt</p>
+                    </button>
+                    <button onclick="selectFeeling('🎉 ünneplős')" class="text-center p-2 hover:bg-white dark:hover:bg-dark-400 rounded-lg transition">
+                        <span class="text-2xl">🎉</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">ünneplős</p>
+                    </button>
+                    <button onclick="selectFeeling('😤 mérges')" class="text-center p-2 hover:bg-white dark:hover:bg-dark-400 rounded-lg transition">
+                        <span class="text-2xl">😤</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">mérges</p>
+                    </button>
+                    <button onclick="selectFeeling('🤔 gondolkodós')" class="text-center p-2 hover:bg-white dark:hover:bg-dark-400 rounded-lg transition">
+                        <span class="text-2xl">🤔</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">gondolkodós</p>
+                    </button>
+                    <button onclick="selectFeeling('😎 menő')" class="text-center p-2 hover:bg-white dark:hover:bg-dark-400 rounded-lg transition">
+                        <span class="text-2xl">😎</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">menő</p>
+                    </button>
+                </div>
+            </div>
+            
             <button onclick="createPost()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition">
                 Közzététel
             </button>
@@ -1895,6 +1968,40 @@ function removePostImage() {
     document.getElementById('postImageInput').value = '';
 }
 
+// Érzés/Feeling kezelés
+let selectedFeeling = '';
+let selectedAudience = 'public';
+
+function toggleFeelingPicker() {
+    document.getElementById('feelingPicker').classList.toggle('hidden');
+}
+
+function selectFeeling(feeling) {
+    selectedFeeling = feeling;
+    document.getElementById('feelingText').textContent = feeling;
+    document.getElementById('selectedFeeling').classList.remove('hidden');
+    document.getElementById('feelingPicker').classList.add('hidden');
+}
+
+function removeFeeling() {
+    selectedFeeling = '';
+    document.getElementById('selectedFeeling').classList.add('hidden');
+}
+
+// Közönség választó
+function toggleAudienceDropdown() {
+    document.getElementById('audienceDropdown').classList.toggle('hidden');
+}
+
+function setAudience(audience) {
+    selectedAudience = audience;
+    const icons = { public: 'fa-globe-americas', friends: 'fa-user-friends', private: 'fa-lock' };
+    const texts = { public: 'Nyilvános', friends: 'Barátok', private: 'Csak én' };
+    document.getElementById('audienceIcon').className = `fas ${icons[audience]} text-gray-600 dark:text-gray-400`;
+    document.getElementById('audienceText').textContent = texts[audience];
+    document.getElementById('audienceDropdown').classList.add('hidden');
+}
+
 async function createPost() {
     const content = document.getElementById('postContent').value;
     const imageEl = document.getElementById('postPreviewImg');
@@ -1913,8 +2020,18 @@ async function createPost() {
         
         await api('/posts', {
             method: 'POST',
-            body: JSON.stringify({ content, image: imageUrl })
+            body: JSON.stringify({ 
+                content, 
+                image: imageUrl,
+                feeling: selectedFeeling || null
+            })
         });
+        
+        // Reset feeling
+        selectedFeeling = '';
+        document.getElementById('selectedFeeling').classList.add('hidden');
+        document.getElementById('feelingPicker').classList.add('hidden');
+        
         closePostModal();
         toast('Bejegyzés közzétéve!', 'success');
     } catch (e) {}
