@@ -758,7 +758,7 @@
         
         <!-- ========== ADMIN PAGE ========== -->
         <div id="adminPage" class="hidden">
-            <div class="max-w-5xl mx-auto px-4 py-6">
+            <div class="max-w-6xl mx-auto px-4 py-6">
                 <div class="bg-white dark:bg-dark-200 rounded-xl shadow">
                     <div class="p-6 border-b border-gray-200 dark:border-dark-300">
                         <h1 class="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
@@ -770,7 +770,7 @@
                     </div>
                     <div class="p-6">
                         <!-- Stats -->
-                        <div class="grid md:grid-cols-3 gap-4 mb-8">
+                        <div class="grid md:grid-cols-4 gap-4 mb-8">
                             <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-5 rounded-xl text-white">
                                 <div class="flex items-center justify-between">
                                     <div>
@@ -798,6 +798,30 @@
                                     <i class="fas fa-comments text-3xl text-purple-200"></i>
                                 </div>
                             </div>
+                            <div class="bg-gradient-to-br from-red-500 to-red-600 p-5 rounded-xl text-white">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-red-100 text-sm">Kitiltottak</p>
+                                        <p id="adminBanned" class="text-3xl font-bold mt-1">0</p>
+                                    </div>
+                                    <i class="fas fa-ban text-3xl text-red-200"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Search & Filter -->
+                        <div class="flex flex-col md:flex-row gap-4 mb-6">
+                            <div class="flex-1 relative">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                <input type="text" id="adminUserSearch" placeholder="Keresés név, felhasználónév vagy IP alapján..." 
+                                    class="w-full bg-gray-100 dark:bg-dark-300 rounded-lg pl-10 pr-4 py-2.5 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                    oninput="filterAdminUsers(this.value)">
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="filterAdminUsersByStatus('all')" class="admin-filter-btn px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium">Összes</button>
+                                <button onclick="filterAdminUsersByStatus('online')" class="admin-filter-btn px-4 py-2 bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium">Online</button>
+                                <button onclick="filterAdminUsersByStatus('banned')" class="admin-filter-btn px-4 py-2 bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium">Kitiltott</button>
+                            </div>
                         </div>
                         
                         <!-- Users List -->
@@ -805,6 +829,19 @@
                         <div id="adminUserList" class="space-y-2"></div>
                     </div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- User Details Modal (Admin) -->
+        <div id="userDetailsModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-dark-200 rounded-xl w-full max-w-2xl shadow-2xl slide-up max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-300 sticky top-0 bg-white dark:bg-dark-200">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Felhasználó részletek</h3>
+                    <button onclick="closeUserDetailsModal()" class="w-9 h-9 bg-gray-100 dark:bg-dark-300 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                        <i class="fas fa-times text-gray-500"></i>
+                    </button>
+                </div>
+                <div id="userDetailsContent" class="p-6"></div>
             </div>
         </div>
         
@@ -3348,59 +3385,315 @@ async function saveSettings() {
 }
 
 // ============ ADMIN ============
+let allAdminUsers = [];
+
 async function loadAdmin() {
     if (!currentUser.isAdmin) return navigate('feed');
     
     try {
         const stats = await api('/admin/stats');
-        const users = await api('/admin/users');
+        allAdminUsers = await api('/admin/users');
         
         document.getElementById('adminUsers').textContent = stats.users;
         document.getElementById('adminPosts').textContent = stats.posts;
         document.getElementById('adminMessages').textContent = stats.messages;
+        document.getElementById('adminBanned').textContent = allAdminUsers.filter(u => u.isBanned).length;
         
-        document.getElementById('adminUserList').innerHTML = users.map(u => {
-            const userName = getUserName(u);
-            let badge = '';
-            if (u.isOwner) {
-                badge = '<span class="ml-2 text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-crown mr-1"></i>Tulajdonos</span>';
-            } else if (u.isAdmin) {
-                badge = '<span class="ml-2 text-xs bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-shield-alt mr-1"></i>Admin</span>';
-            }
+        renderAdminUsers(allAdminUsers);
+    } catch (e) {}
+}
+
+function renderAdminUsers(users) {
+    document.getElementById('adminUserList').innerHTML = users.map(u => {
+        const userName = getUserName(u);
+        let badge = '';
+        let statusBadge = '';
+        
+        if (u.isOwner) {
+            badge = '<span class="ml-2 text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-crown mr-1"></i>Tulajdonos</span>';
+        } else if (u.isAdmin) {
+            badge = '<span class="ml-2 text-xs bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-shield-alt mr-1"></i>Admin</span>';
+        }
+        
+        if (u.isBanned) {
+            statusBadge = '<span class="ml-2 text-xs bg-red-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-ban mr-1"></i>Kitiltva</span>';
+        } else if (u.isOnline) {
+            statusBadge = '<span class="ml-2 text-xs bg-green-500 text-white px-2 py-0.5 rounded-full"><i class="fas fa-circle mr-1 text-[8px]"></i>Online</span>';
+        }
+        
+        // Törlés: owner mindent törölhet (kivéve magát), admin csak nem-admint
+        const canDelete = !u.isOwner && (currentUser.isOwner || !u.isAdmin);
+        
+        // Admin jog: csak owner adhat/vehet el
+        const canToggleAdmin = currentUser.isOwner && !u.isOwner;
+        
+        // Tiltás: admin tilthat nem-admint, owner mindent (kivéve magát)
+        const canBan = !u.isOwner && (currentUser.isOwner || !u.isAdmin);
+        
+        const regDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Ismeretlen';
+        
+        return `
+            <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-dark-300 rounded-xl admin-user-row ${u.isBanned ? 'opacity-60' : ''}" data-username="${u.username || ''}" data-name="${userName.toLowerCase()}" data-ip="${u.lastLoginIP || ''}" data-status="${u.isBanned ? 'banned' : u.isOnline ? 'online' : 'offline'}">
+                <div class="relative">
+                    <img src="${getAvatar(u)}" class="w-12 h-12 rounded-full cursor-pointer" onclick="navigateToProfile('${u.username || u._id}')">
+                    ${u.isOnline && !u.isBanned ? '<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-dark-300 rounded-full"></span>' : ''}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-gray-800 dark:text-white text-sm cursor-pointer hover:underline inline-flex items-center flex-wrap" onclick="navigateToProfile('${u.username || u._id}')">
+                        ${userName}${badge}${statusBadge}
+                    </p>
+                    <p class="text-xs text-gray-500">@${u.username || 'user'}</p>
+                    <p class="text-xs text-gray-400 mt-1">
+                        <i class="far fa-calendar mr-1"></i>Regisztrált: ${regDate}
+                        ${u.loginCount ? `<span class="ml-2"><i class="fas fa-sign-in-alt mr-1"></i>${u.loginCount}× bejelentkezés</span>` : ''}
+                    </p>
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <button onclick="showUserDetails('${u._id}')" class="w-8 h-8 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30 flex items-center justify-center transition" title="Részletek">
+                        <i class="fas fa-info-circle text-blue-500 text-sm"></i>
+                    </button>
+                    ${canBan ? `
+                        <button onclick="${u.isBanned ? `unbanUser('${u._id}')` : `banUser('${u._id}')`}" class="w-8 h-8 rounded-full hover:bg-${u.isBanned ? 'green' : 'orange'}-100 dark:hover:bg-${u.isBanned ? 'green' : 'orange'}-900/30 flex items-center justify-center transition" title="${u.isBanned ? 'Tiltás feloldása' : 'Kitiltás'}">
+                            <i class="fas fa-${u.isBanned ? 'unlock' : 'ban'} text-${u.isBanned ? 'green' : 'orange'}-500 text-sm"></i>
+                        </button>
+                    ` : ''}
+                    ${canToggleAdmin ? `
+                        <button onclick="toggleAdmin('${u._id}', ${u.isAdmin})" class="px-3 py-1.5 rounded-lg text-xs font-medium transition ${u.isAdmin 
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-600 hover:bg-red-200 dark:hover:bg-red-900/50' 
+                            : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 hover:bg-purple-200 dark:hover:bg-purple-900/50'}">
+                            <i class="fas fa-${u.isAdmin ? 'user-minus' : 'user-shield'} mr-1"></i>
+                            ${u.isAdmin ? 'Admin elvétele' : 'Admin adása'}
+                        </button>
+                    ` : ''}
+                    ${canDelete ? `
+                        <button onclick="deleteUser('${u._id}')" class="w-8 h-8 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center transition" title="Törlés">
+                            <i class="fas fa-trash text-red-500 text-sm"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function filterAdminUsers(query) {
+    const rows = document.querySelectorAll('.admin-user-row');
+    const q = query.toLowerCase();
+    rows.forEach(row => {
+        const name = row.dataset.name || '';
+        const username = row.dataset.username || '';
+        const ip = row.dataset.ip || '';
+        const match = name.includes(q) || username.includes(q) || ip.includes(q);
+        row.style.display = match ? '' : 'none';
+    });
+}
+
+function filterAdminUsersByStatus(status) {
+    document.querySelectorAll('.admin-filter-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-500', 'text-white');
+        btn.classList.add('bg-gray-200', 'dark:bg-dark-300', 'text-gray-700', 'dark:text-gray-300');
+    });
+    event.target.classList.remove('bg-gray-200', 'dark:bg-dark-300', 'text-gray-700', 'dark:text-gray-300');
+    event.target.classList.add('bg-blue-500', 'text-white');
+    
+    const rows = document.querySelectorAll('.admin-user-row');
+    rows.forEach(row => {
+        if (status === 'all') {
+            row.style.display = '';
+        } else {
+            row.style.display = row.dataset.status === status ? '' : 'none';
+        }
+    });
+}
+
+async function showUserDetails(userId) {
+    try {
+        const user = await api(`/admin/users/${userId}/details`);
+        const modal = document.getElementById('userDetailsModal');
+        const content = document.getElementById('userDetailsContent');
+        
+        const formatDate = (date) => date ? new Date(date).toLocaleString('hu-HU') : 'Nincs adat';
+        const formatIP = (ip) => ip || 'Nincs adat';
+        
+        content.innerHTML = `
+            <div class="flex items-center gap-4 mb-6">
+                <img src="${getAvatar(user)}" class="w-20 h-20 rounded-full">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">${getUserName(user)}</h2>
+                    <p class="text-blue-500">@${user.username}</p>
+                    ${user.isOwner ? '<span class="inline-flex items-center gap-1 text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-full mt-1"><i class="fas fa-crown"></i> Tulajdonos</span>' : ''}
+                    ${user.isAdmin && !user.isOwner ? '<span class="inline-flex items-center gap-1 text-xs bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-2 py-0.5 rounded-full mt-1"><i class="fas fa-shield-alt"></i> Admin</span>' : ''}
+                    ${user.isBanned ? '<span class="inline-flex items-center gap-1 text-xs bg-red-500 text-white px-2 py-0.5 rounded-full mt-1"><i class="fas fa-ban"></i> Kitiltva</span>' : ''}
+                </div>
+            </div>
             
-            // Törlés: owner mindent törölhet (kivéve magát), admin csak nem-admint
-            const canDelete = !u.isOwner && (currentUser.isOwner || !u.isAdmin);
-            
-            // Admin jog: csak owner adhat/vehet el
-            const canToggleAdmin = currentUser.isOwner && !u.isOwner;
-            
-            return `
-                <div class="flex items-center gap-4 p-3 bg-gray-50 dark:bg-dark-300 rounded-xl">
-                    <img src="${getAvatar(u)}" class="w-10 h-10 rounded-full cursor-pointer" onclick="navigateToProfile('${u.username || u._id}')">
-                    <div class="flex-1">
-                        <p class="font-semibold text-gray-800 dark:text-white text-sm cursor-pointer hover:underline" onclick="navigateToProfile('${u.username || u._id}')">
-                            ${userName}${badge}
-                        </p>
-                        <p class="text-xs text-gray-500">@${u.username || 'user'}${u.birthDate ? ' · ' + new Date(u.birthDate).toLocaleDateString('hu-HU') : ''}</p>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        ${canToggleAdmin ? `
-                            <button onclick="toggleAdmin('${u._id}', ${u.isAdmin})" class="px-3 py-1.5 rounded-lg text-xs font-medium transition ${u.isAdmin 
-                                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 hover:bg-red-200 dark:hover:bg-red-900/50' 
-                                : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 hover:bg-purple-200 dark:hover:bg-purple-900/50'}">
-                                <i class="fas fa-${u.isAdmin ? 'user-minus' : 'user-shield'} mr-1"></i>
-                                ${u.isAdmin ? 'Admin elvétele' : 'Admin adása'}
-                            </button>
-                        ` : ''}
-                        ${canDelete ? `
-                            <button onclick="deleteUser('${u._id}')" class="w-8 h-8 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center transition" title="Törlés">
-                                <i class="fas fa-trash text-red-500 text-sm"></i>
-                            </button>
-                        ` : ''}
+            ${user.isBanned ? `
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6">
+                    <h3 class="font-semibold text-red-600 dark:text-red-400 mb-2"><i class="fas fa-ban mr-2"></i>Kitiltás információ</h3>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <p class="text-gray-600 dark:text-gray-400">Kitiltva:</p>
+                        <p class="text-gray-800 dark:text-white">${formatDate(user.bannedAt)}</p>
+                        <p class="text-gray-600 dark:text-gray-400">Kitiltó:</p>
+                        <p class="text-gray-800 dark:text-white">${user.bannedBy ? getUserName(user.bannedBy) : 'Ismeretlen'}</p>
+                        <p class="text-gray-600 dark:text-gray-400">Indok:</p>
+                        <p class="text-gray-800 dark:text-white">${user.banReason || 'Nincs megadva'}</p>
                     </div>
                 </div>
-            `;
-        }).join('');
+            ` : ''}
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-user text-blue-500"></i> Személyes adatok
+                    </h3>
+                    <div class="bg-gray-50 dark:bg-dark-300 rounded-xl p-4 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Keresztnév:</span>
+                            <span class="text-gray-800 dark:text-white">${user.firstName || '-'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Vezetéknév:</span>
+                            <span class="text-gray-800 dark:text-white">${user.lastName || '-'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Születési dátum:</span>
+                            <span class="text-gray-800 dark:text-white">${user.birthDate ? new Date(user.birthDate).toLocaleDateString('hu-HU') : '-'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Életkor:</span>
+                            <span class="text-gray-800 dark:text-white">${user.birthDate ? calculateAge(new Date(user.birthDate)) + ' év' : '-'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Kapcsolati állapot:</span>
+                            <span class="text-gray-800 dark:text-white">${getRelationshipText(user.relationship) || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-network-wired text-green-500"></i> Technikai adatok
+                    </h3>
+                    <div class="bg-gray-50 dark:bg-dark-300 rounded-xl p-4 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Regisztráció IP:</span>
+                            <span class="text-gray-800 dark:text-white font-mono text-xs">${formatIP(user.registrationIP)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Utolsó bejelentkezés IP:</span>
+                            <span class="text-gray-800 dark:text-white font-mono text-xs">${formatIP(user.lastLoginIP)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Bejelentkezések száma:</span>
+                            <span class="text-gray-800 dark:text-white">${user.loginCount || 0}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Státusz:</span>
+                            <span class="${user.isOnline ? 'text-green-500' : 'text-gray-500'}">${user.isOnline ? '🟢 Online' : '⚫ Offline'}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-calendar text-purple-500"></i> Időpontok
+                    </h3>
+                    <div class="bg-gray-50 dark:bg-dark-300 rounded-xl p-4 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Regisztráció:</span>
+                            <span class="text-gray-800 dark:text-white">${formatDate(user.createdAt)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Utolsó bejelentkezés:</span>
+                            <span class="text-gray-800 dark:text-white">${formatDate(user.lastLoginAt)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Utolsó aktivitás:</span>
+                            <span class="text-gray-800 dark:text-white">${formatDate(user.lastSeen)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Username váltva:</span>
+                            <span class="text-gray-800 dark:text-white">${formatDate(user.lastUsernameChange)}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-laptop text-orange-500"></i> Eszköz információ
+                    </h3>
+                    <div class="bg-gray-50 dark:bg-dark-300 rounded-xl p-4 text-sm">
+                        <p class="text-gray-600 dark:text-gray-400 break-all text-xs">${user.deviceInfo || 'Nincs adat'}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <h3 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                    <i class="fas fa-briefcase text-cyan-500"></i> Profil adatok
+                </h3>
+                <div class="bg-gray-50 dark:bg-dark-300 rounded-xl p-4 grid md:grid-cols-2 gap-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Munkahely:</span>
+                        <span class="text-gray-800 dark:text-white">${user.workplace || '-'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Munkakör:</span>
+                        <span class="text-gray-800 dark:text-white">${user.jobTitle || '-'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Iskola:</span>
+                        <span class="text-gray-800 dark:text-white">${user.school || '-'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Egyetem:</span>
+                        <span class="text-gray-800 dark:text-white">${user.college || '-'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Város:</span>
+                        <span class="text-gray-800 dark:text-white">${user.currentCity || '-'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Szülőváros:</span>
+                        <span class="text-gray-800 dark:text-white">${user.hometown || '-'}</span>
+                    </div>
+                    <div class="col-span-2 flex justify-between">
+                        <span class="text-gray-500">Barátok:</span>
+                        <span class="text-gray-800 dark:text-white">${user.friends?.length || 0} barát</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        modal.classList.remove('hidden');
+    } catch (e) {}
+}
+
+function closeUserDetailsModal() {
+    document.getElementById('userDetailsModal').classList.add('hidden');
+}
+
+async function banUser(userId) {
+    const reason = prompt('Add meg a kitiltás okát:');
+    if (reason === null) return; // Cancel
+    
+    try {
+        await api(`/admin/ban/${userId}`, {
+            method: 'POST',
+            body: JSON.stringify({ reason })
+        });
+        toast('Felhasználó kitiltva!', 'success');
+        loadAdmin();
+    } catch (e) {}
+}
+
+async function unbanUser(userId) {
+    if (!confirm('Biztosan feloldod a tiltást?')) return;
+    
+    try {
+        await api(`/admin/unban/${userId}`, { method: 'POST' });
+        toast('Tiltás feloldva!', 'success');
+        loadAdmin();
     } catch (e) {}
 }
 
