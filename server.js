@@ -524,8 +524,8 @@ app.get('/api/posts/user/:id', auth, async (req, res) => {
 
 // Poszt létrehozása
 app.post('/api/posts', auth, async (req, res) => {
-    const { content, image } = req.body;
-    const post = await Post.create({ author: req.user._id, content, image });
+    const { content, image, feeling } = req.body;
+    const post = await Post.create({ author: req.user._id, content, image, feeling });
     await post.populate('author', 'firstName lastName username avatar');
     io.emit('newPost', post);
     res.json(post);
