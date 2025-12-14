@@ -1806,7 +1806,7 @@ async function handleSearch(query) {
         html += filteredCommunities.slice(0, 5).map(c => {
             const privacyIcon = c.privacy === 'public' ? 'fa-globe' : c.privacy === 'private' ? 'fa-lock' : 'fa-eye-slash';
             return `
-                <div onclick="navigate('community', '${c._id}')" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
+                <div onclick="window.location.href='/groups/${c._id}'" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition">
                     <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                         ${c.cover ? `<img src="${c.cover}" class="w-10 h-10 rounded-lg object-cover">` : `<i class="fas fa-users text-white"></i>`}
                     </div>
@@ -3440,6 +3440,19 @@ function handleURLRouting() {
         
         // Ellenőrizzük, hogy nem egy API vagy rendszer útvonal-e
         if (!pathPart.startsWith('api/') && !pathPart.includes('.')) {
+            
+            // Csoportok kezelése: /groups/[id]
+            if (pathPart.startsWith('groups/')) {
+                const groupId = pathPart.replace('groups/', '');
+                if (groupId && groupId.length > 0) {
+                    navigate('community', groupId);
+                    return;
+                }
+                // Ha nincs ID, akkor a csoportok listára megyünk
+                navigate('communities');
+                return;
+            }
+            
             // Profil oldal megnyitása username alapján
             navigate('profile', pathPart);
             return;
@@ -3919,7 +3932,7 @@ async function showCommunitiesTab(tab) {
             const creatorName = getUserName(c.creator);
             
             return `
-                <div class="bg-white dark:bg-dark-200 rounded-xl shadow overflow-hidden hover:shadow-lg transition cursor-pointer" onclick="navigate('community', '${c._id}')">
+                <div class="bg-white dark:bg-dark-200 rounded-xl shadow overflow-hidden hover:shadow-lg transition cursor-pointer" onclick="window.location.href='/groups/${c._id}'"
                     <div class="h-24 bg-gradient-to-r from-blue-500 to-purple-600 relative">
                         ${c.cover ? `<img src="${c.cover}" class="w-full h-full object-cover">` : ''}
                         ${c.isOfficial ? `<div class="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs px-2 py-1 rounded-full shadow"><i class="fas fa-crown mr-1"></i>Hivatalos</div>` : ''}
@@ -3964,6 +3977,12 @@ async function showCommunitiesTab(tab) {
 async function loadCommunityDetail(communityId) {
     try {
         currentCommunity = await api(`/communities/${communityId}`);
+        
+        // URL frissítése /groups/[id] formátumra
+        const expectedPath = `/groups/${communityId}`;
+        if (window.location.pathname !== expectedPath) {
+            window.history.pushState({}, '', expectedPath);
+        }
         const c = currentCommunity;
         
         // Cover
@@ -4616,7 +4635,7 @@ async function handleCommunitySearch(query) {
             const creatorName = getUserName(c.creator);
             
             return `
-                <div onclick="navigate('community', '${c._id}')" class="flex items-center gap-4 p-3 hover:bg-gray-50 dark:hover:bg-dark-300 cursor-pointer transition border-b border-gray-100 dark:border-dark-300 last:border-0">
+                <div onclick="window.location.href='/groups/${c._id}'" class="flex items-center gap-4 p-3 hover:bg-gray-50 dark:hover:bg-dark-300 cursor-pointer transition border-b border-gray-100 dark:border-dark-300 last:border-0">
                     <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
                         ${c.cover ? `<img src="${c.cover}" class="w-14 h-14 rounded-xl object-cover">` : `<i class="fas fa-users text-white text-xl"></i>`}
                     </div>
