@@ -818,7 +818,7 @@ app.post('/api/posts/:id/comment', auth, async (req, res) => {
 app.get('/api/messages/conversations', auth, async (req, res) => {
     const messages = await Message.find({
         $or: [{ from: req.user._id }, { to: req.user._id }]
-    }).populate('from to', 'name avatar isOnline');
+    }).populate('from to', 'firstName lastName name avatar isOnline');
 
     const conversations = {};
     messages.forEach(msg => {
