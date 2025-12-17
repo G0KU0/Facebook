@@ -2597,7 +2597,7 @@ async function loadMessengerChatList() {
                     <span class="absolute bottom-0 right-0 w-3 h-3 ${c.user.isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white dark:border-dark-200 rounded-full"></span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="font-semibold text-gray-800 dark:text-white text-sm">${c.user.name}</p>
+                    <p class="font-semibold text-gray-800 dark:text-white text-sm">${getUserName(c.user)}</p>
                     <p class="text-xs text-gray-500 truncate">${c.lastMessage?.text || 'Kezdj el beszélgetni'}</p>
                 </div>
                 ${c.unread > 0 ? `<span class="bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">${c.unread}</span>` : ''}
