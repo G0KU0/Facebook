@@ -1079,39 +1079,39 @@
             </div>
             
             <!-- Profilképek -->
-<h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
-    <i class="fas fa-image text-green-500"></i> Profilképek
-</h4>
-<div>
-    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profilkép</label>
-    <div class="flex gap-2 items-center">
-        <div id="avatarPreviewContainer" class="w-16 h-16 rounded-full bg-gray-200 dark:bg-dark-400 overflow-hidden flex-shrink-0">
-            <img id="avatarPreview" src="" class="w-full h-full object-cover hidden">
-        </div>
-        <div class="flex-1">
-            <label class="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer transition">
-                <i class="fas fa-upload"></i>
-                <span>Kép feltöltése</span>
-                <input type="file" id="settingsAvatarFile" accept="image/*" class="hidden" onchange="previewSettingsImage(this, 'avatar')">
-            </label>
-            <input type="hidden" id="settingsAvatar">
-        </div>
-    </div>
-</div>
-<div>
-    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Borítókép</label>
-    <div class="flex flex-col gap-2">
-        <div id="coverPreviewContainer" class="w-full h-24 rounded-lg bg-gray-200 dark:bg-dark-400 overflow-hidden">
-            <img id="coverPreview" src="" class="w-full h-full object-cover hidden">
-        </div>
-        <label class="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer transition">
-            <i class="fas fa-upload"></i>
-            <span>Borítókép feltöltése</span>
-            <input type="file" id="settingsCoverFile" accept="image/*" class="hidden" onchange="previewSettingsImage(this, 'cover')">
-        </label>
-        <input type="hidden" id="settingsCover">
-    </div>
-</div>
+            <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
+                <i class="fas fa-image text-green-500"></i> Profilképek
+            </h4>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profilkép</label>
+                <div class="flex gap-3 items-center">
+                    <div class="w-16 h-16 rounded-full bg-gray-200 dark:bg-dark-400 overflow-hidden flex-shrink-0 border-2 border-gray-300 dark:border-dark-500">
+                        <img id="avatarPreview" src="" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1">
+                        <label class="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer transition text-sm font-medium">
+                            <i class="fas fa-camera"></i>
+                            <span>Új profilkép</span>
+                            <input type="file" id="settingsAvatarFile" accept="image/*" class="hidden" onchange="previewSettingsAvatar(this)">
+                        </label>
+                        <input type="hidden" id="settingsAvatar">
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Borítókép</label>
+                <div class="space-y-2">
+                    <div class="w-full h-24 rounded-lg bg-gray-200 dark:bg-dark-400 overflow-hidden border-2 border-gray-300 dark:border-dark-500">
+                        <img id="coverPreview" src="" class="w-full h-full object-cover">
+                    </div>
+                    <label class="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer transition text-sm font-medium">
+                        <i class="fas fa-image"></i>
+                        <span>Új borítókép</span>
+                        <input type="file" id="settingsCoverFile" accept="image/*" class="hidden" onchange="previewSettingsCover(this)">
+                    </label>
+                    <input type="hidden" id="settingsCover">
+                </div>
+            </div>
             
             <!-- Bemutatkozás -->
             <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
@@ -2619,7 +2619,7 @@ async function loadMessengerChatList() {
                     <span class="absolute bottom-0 right-0 w-3 h-3 ${c.user.isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white dark:border-dark-200 rounded-full"></span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="font-semibold text-gray-800 dark:text-white text-sm">${getUserName(c.user)}</p>
+                    <p class="font-semibold text-gray-800 dark:text-white text-sm">${c.user.name}</p>
                     <p class="text-xs text-gray-500 truncate">${c.lastMessage?.text || 'Kezdj el beszélgetni'}</p>
                 </div>
                 ${c.unread > 0 ? `<span class="bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">${c.unread}</span>` : ''}
@@ -3307,22 +3307,27 @@ async function loadNotifications() {
 let canChangeUsername = true;
 let originalUsername = '';
 
- // Beállítások kép előnézet
-function previewSettingsImage(input, type) {
+// Profilkép előnézet a beállításokban
+function previewSettingsAvatar(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = (e) => {
-            if (type === 'avatar') {
-                document.getElementById('avatarPreview').src = e.target.result;
-                document.getElementById('avatarPreview').classList.remove('hidden');
-            } else {
-                document.getElementById('coverPreview').src = e.target.result;
-                document.getElementById('coverPreview').classList.remove('hidden');
-            }
+            document.getElementById('avatarPreview').src = e.target.result;
         };
         reader.readAsDataURL(input.files[0]);
     }
-}   
+}
+
+// Borítókép előnézet a beállításokban
+function previewSettingsCover(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('coverPreview').src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 
 function showSettings() {
     document.getElementById('settingsModal').classList.remove('hidden');
@@ -3332,20 +3337,14 @@ function showSettings() {
     originalUsername = currentUser.username || '';
     document.getElementById('settingsAvatar').value = currentUser.avatar || '';
     document.getElementById('settingsCover').value = currentUser.cover || '';
-
-// Előnézet beállítása
-if (currentUser.avatar) {
-    document.getElementById('avatarPreview').src = currentUser.avatar;
-    document.getElementById('avatarPreview').classList.remove('hidden');
-} else {
-    document.getElementById('avatarPreview').classList.add('hidden');
-}
-if (currentUser.cover) {
-    document.getElementById('coverPreview').src = currentUser.cover;
-    document.getElementById('coverPreview').classList.remove('hidden');
-} else {
-    document.getElementById('coverPreview').classList.add('hidden');
-}
+    
+    // Előnézet beállítása a jelenlegi képekhez
+    document.getElementById('avatarPreview').src = currentUser.avatar || getAvatar(currentUser);
+    document.getElementById('coverPreview').src = currentUser.cover || 'https://via.placeholder.com/800x200/3b82f6/ffffff?text=Borítókép';
+    
+    // File inputok törlése
+    document.getElementById('settingsAvatarFile').value = '';
+    document.getElementById('settingsCoverFile').value = '';
     document.getElementById('settingsBio').value = currentUser.bio || '';
     
     // Új mezők
@@ -3483,13 +3482,42 @@ async function saveSettings() {
         }
         
         // Profil adatok mentése
+        // Képek feltöltése ha van új
+        let avatarUrl = document.getElementById('settingsAvatar').value;
+        let coverUrl = document.getElementById('settingsCover').value;
+
+        const avatarFile = document.getElementById('settingsAvatarFile');
+        const coverFile = document.getElementById('settingsCoverFile');
+
+        // Profilkép feltöltése
+        if (avatarFile && avatarFile.files && avatarFile.files[0]) {
+            toast('Profilkép feltöltése...', 'info');
+            const reader = new FileReader();
+            const avatarBase64 = await new Promise((resolve) => {
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(avatarFile.files[0]);
+            });
+            avatarUrl = await uploadImage(avatarBase64);
+        }
+
+        // Borítókép feltöltése
+        if (coverFile && coverFile.files && coverFile.files[0]) {
+            toast('Borítókép feltöltése...', 'info');
+            const reader = new FileReader();
+            const coverBase64 = await new Promise((resolve) => {
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(coverFile.files[0]);
+            });
+            coverUrl = await uploadImage(coverBase64);
+        }
+
         const data = await api('/users/profile', {
             method: 'PUT',
             body: JSON.stringify({
                 firstName,
                 lastName,
-                avatar: document.getElementById('settingsAvatar').value,
-                cover: document.getElementById('settingsCover').value,
+                avatar: avatarUrl,
+                cover: coverUrl,
                 bio: document.getElementById('settingsBio').value,
                 workplace: document.getElementById('settingsWorkplace').value,
                 jobTitle: document.getElementById('settingsJobTitle').value,
