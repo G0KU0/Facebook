@@ -3307,6 +3307,23 @@ async function loadNotifications() {
 let canChangeUsername = true;
 let originalUsername = '';
 
+ // Beállítások kép előnézet
+function previewSettingsImage(input, type) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (type === 'avatar') {
+                document.getElementById('avatarPreview').src = e.target.result;
+                document.getElementById('avatarPreview').classList.remove('hidden');
+            } else {
+                document.getElementById('coverPreview').src = e.target.result;
+                document.getElementById('coverPreview').classList.remove('hidden');
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}   
+
 function showSettings() {
     document.getElementById('settingsModal').classList.remove('hidden');
     document.getElementById('settingsFirstName').value = currentUser.firstName || '';
@@ -3315,6 +3332,20 @@ function showSettings() {
     originalUsername = currentUser.username || '';
     document.getElementById('settingsAvatar').value = currentUser.avatar || '';
     document.getElementById('settingsCover').value = currentUser.cover || '';
+
+// Előnézet beállítása
+if (currentUser.avatar) {
+    document.getElementById('avatarPreview').src = currentUser.avatar;
+    document.getElementById('avatarPreview').classList.remove('hidden');
+} else {
+    document.getElementById('avatarPreview').classList.add('hidden');
+}
+if (currentUser.cover) {
+    document.getElementById('coverPreview').src = currentUser.cover;
+    document.getElementById('coverPreview').classList.remove('hidden');
+} else {
+    document.getElementById('coverPreview').classList.add('hidden');
+}
     document.getElementById('settingsBio').value = currentUser.bio || '';
     
     // Új mezők
