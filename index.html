@@ -3269,6 +3269,17 @@ async function removeFriend(userId) {
     } catch (e) {}
 }
 
+// Új helper függvény a képek előnézetéhez
+function previewSettingsImage(input, previewId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById(previewId).src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}    
+    
 // ============ NOTIFICATIONS ============
 async function loadNotifications() {
     try {
@@ -3295,21 +3306,29 @@ async function loadNotifications() {
     } catch (e) {}
 }
 
+
 // ============ SETTINGS ============
 let canChangeUsername = true;
 let originalUsername = '';
 
 function showSettings() {
     document.getElementById('settingsModal').classList.remove('hidden');
+    
+    // Alapadatok
     document.getElementById('settingsFirstName').value = currentUser.firstName || '';
     document.getElementById('settingsLastName').value = currentUser.lastName || '';
     document.getElementById('settingsUsername').value = currentUser.username || '';
     originalUsername = currentUser.username || '';
-    document.getElementById('settingsAvatar').value = currentUser.avatar || '';
-    document.getElementById('settingsCover').value = currentUser.cover || '';
     document.getElementById('settingsBio').value = currentUser.bio || '';
     
-    // Új mezők
+    // KÉPEK BETÖLTÉSE (ez változott)
+    document.getElementById('settingsAvatarPreview').src = currentUser.avatar || 'https://ui-avatars.com/api/?name=User';
+    document.getElementById('settingsCoverPreview').src = currentUser.cover || '';
+    // Inputok nullázása
+    document.getElementById('settingsAvatarInput').value = '';
+    document.getElementById('settingsCoverInput').value = '';
+
+    // Egyéb adatok
     document.getElementById('settingsWorkplace').value = currentUser.workplace || '';
     document.getElementById('settingsJobTitle').value = currentUser.jobTitle || '';
     document.getElementById('settingsSchool').value = currentUser.school || '';
@@ -3320,7 +3339,7 @@ function showSettings() {
     
     document.getElementById('userMenu').classList.add('hidden');
     
-    // Születési dátum - csak akkor jelenik meg ha még nincs beállítva
+    // Dátum kezelés
     const birthDateContainer = document.getElementById('settingsBirthDateContainer');
     if (!currentUser.birthDate) {
         birthDateContainer.classList.remove('hidden');
@@ -3329,7 +3348,29 @@ function showSettings() {
         birthDateContainer.classList.add('hidden');
     }
     
-    // Vezetéknév kötelező jelzés (tulajdonosnak nem kötelező)
+    // Username változtatás szabályok
+    const hint = document.getElementById('usernameChangeHint');
+    if (currentUser.lastUsernameChange) {
+        const daysSince = (Date.now() - new Date(currentUser.lastUsernameChange).getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSince < 30) {
+            const daysLeft = Math.ceil(30 - daysSince);
+            hint.textContent = `Még ${daysLeft} napot kell várnod a felhasználónév módosításához`;
+            hint.className = 'text-xs text-orange-500 mt-1';
+            document.getElementById('settingsUsername').disabled = true;
+            canChangeUsername = false;
+        } else {
+            hint.textContent = 'Havonta egyszer módosíthatod a felhasználóneved';
+            hint.className = 'text-xs text-gray-500 mt-1';
+            document.getElementById('settingsUsername').disabled = false;
+            canChangeUsername = true;
+        }
+    } else {
+        hint.textContent = 'Havonta egyszer módosíthatod a felhasználóneved';
+        hint.className = 'text-xs text-gray-500 mt-1';
+        document.getElementById('settingsUsername').disabled = false;
+        canChangeUsername = true;
+    }
+
     const lastNameRequired = document.getElementById('lastNameRequired');
     if (currentUser.isOwner) {
         lastNameRequired.textContent = '(opcionális)';
@@ -3338,6 +3379,7 @@ function showSettings() {
         lastNameRequired.textContent = '*';
         lastNameRequired.className = '';
     }
+}
     
     // Ellenőrizzük, hogy változtatható-e a username
     const hint = document.getElementById('usernameChangeHint');
@@ -3412,18 +3454,29 @@ async function saveSettings() {
         const firstName = document.getElementById('settingsFirstName').value.trim();
         const lastName = document.getElementById('settingsLastName').value.trim();
         
-        // Ellenőrzések
-        if (!firstName) {
-            return toast('A keresztnév megadása kötelező!', 'error');
-        }
+        if (!firstName) return toast('A keresztnév megadása kötelező!', 'error');
+        if (!currentUser.isOwner && !lastName) return toast('A vezetéknév megadása kötelező!', 'error');
         
-        if (!currentUser.isOwner && !lastName) {
-            return toast('A vezetéknév megadása kötelező!', 'error');
+        toast('Mentés folyamatban...', 'info');
+
+        // KÉPFELTÖLTÉS LOGIKA (ez változott)
+        let newAvatarUrl = currentUser.avatar;
+        let newCoverUrl = currentUser.cover;
+
+        const avatarInput = document.getElementById('settingsAvatarInput');
+        if (avatarInput.files && avatarInput.files[0]) {
+            const base64 = document.getElementById('settingsAvatarPreview').src;
+            newAvatarUrl = await uploadImage(base64);
         }
-        
+
+        const coverInput = document.getElementById('settingsCoverInput');
+        if (coverInput.files && coverInput.files[0]) {
+            const base64 = document.getElementById('settingsCoverPreview').src;
+            newCoverUrl = await uploadImage(base64);
+        }
+
         const newUsername = document.getElementById('settingsUsername').value.trim();
         
-        // Ha a username változott és változtatható
         if (canChangeUsername && newUsername !== originalUsername && newUsername.length >= 3) {
             try {
                 const usernameResult = await api('/users/username', {
@@ -3431,26 +3484,21 @@ async function saveSettings() {
                     body: JSON.stringify({ username: newUsername })
                 });
                 currentUser = usernameResult;
-            } catch (e) {
-                // Ha hiba van a username váltásnál, az error toast már megjelenik
-                return;
-            }
+            } catch (e) { return; }
         }
         
-        // Születési dátum (csak ha még nincs beállítva)
         let birthDate = null;
         if (!currentUser.birthDate) {
             birthDate = document.getElementById('settingsBirthDate').value;
         }
         
-        // Profil adatok mentése
         const data = await api('/users/profile', {
             method: 'PUT',
             body: JSON.stringify({
                 firstName,
                 lastName,
-                avatar: document.getElementById('settingsAvatar').value,
-                cover: document.getElementById('settingsCover').value,
+                avatar: newAvatarUrl, // Új URL
+                cover: newCoverUrl,   // Új URL
                 bio: document.getElementById('settingsBio').value,
                 workplace: document.getElementById('settingsWorkplace').value,
                 jobTitle: document.getElementById('settingsJobTitle').value,
@@ -3462,14 +3510,19 @@ async function saveSettings() {
                 birthDate: birthDate
             })
         });
+        
         currentUser = data;
         updateUserUI();
         closeSettings();
-        toast('Beállítások mentve!', 'success');
+        toast('Beállítások sikeresen mentve!', 'success');
+        
         if (document.getElementById('profilePage').classList.contains('hidden') === false) {
             loadProfile(currentUser._id);
         }
-    } catch (e) {}
+    } catch (e) {
+        console.error(e);
+        toast('Hiba történt a mentéskor!', 'error');
+    }
 }
 
 // ============ ADMIN ============
