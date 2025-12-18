@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SocialBook</title>
+    <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -137,6 +138,47 @@
                 right: 1rem !important;
             }
         }
+        /* === ÚJ CHAT STÍLUS (Facebook Messenger) === */
+.msg-bubble-content {
+    max-width: fit-content;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+    position: relative;
+    word-wrap: break-word;
+}
+/* Saját üzenet (Jobb oldalt, Kék) */
+.msg-me .msg-bubble-content {
+    background-color: #0084ff;
+    color: white;
+    border-radius: 18px 18px 4px 18px;
+}
+/* Partner üzenete (Bal oldalt, Szürke) */
+.msg-them .msg-bubble-content {
+    background-color: #e4e6eb;
+    color: black;
+    border-radius: 18px 18px 18px 4px;
+}
+/* Sötét mód */
+.dark .msg-them .msg-bubble-content {
+    background-color: #3e4042;
+    color: white;
+}
+/* Képek a chatben */
+.chat-image {
+    border-radius: 12px;
+    max-width: 200px;
+    cursor: pointer;
+    margin-top: 5px;
+    transition: transform 0.2s;
+}
+.chat-image:hover { transform: scale(1.02); }
+/* Emoji gomb */
+.emoji-trigger {
+    cursor: pointer;
+    color: #0084ff;
+    font-size: 1.2rem;
+    padding: 5px;
+}
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-dark-100 transition-colors duration-200">
@@ -2612,19 +2654,36 @@ async function loadMessengerChatList() {
             ...odorUsers.map(u => ({ user: u, lastMessage: null, unread: 0 }))
         ];
         
-        container.innerHTML = allChats.map(c => `
-            <div onclick="openMessengerChat('${c.user._id}')" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition ${currentMessengerChat === c.user._id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}">
+container.innerHTML = allChats.map(c => {
+            // Ellenőrizzük, hogy az utolsó üzenet kép-e
+            let lastMsgText = c.lastMessage?.text || 'Kezdj el beszélgetni';
+            
+            if (lastMsgText.startsWith('[IMAGE]')) {
+                // Ha kép, akkor ikonnal és szöveggel helyettesítjük a linket
+                lastMsgText = '<i class="fas fa-camera mr-1"></i> Fénykép';
+            }
+
+            // Stílusok: Ha olvasatlan, akkor vastagabb a betű (Messenger stílus)
+            const nameClass = c.unread > 0 ? 'font-bold text-black dark:text-white' : 'font-semibold text-gray-700 dark:text-gray-300';
+            const msgClass = c.unread > 0 ? 'font-bold text-gray-900 dark:text-gray-100' : 'text-gray-500';
+            
+            return `
+            <div onclick="openMessengerChat('${c.user._id}')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition ${currentMessengerChat === c.user._id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}">
                 <div class="relative">
-                    <img src="${getAvatar(c.user)}" class="w-12 h-12 rounded-full">
-                    <span class="absolute bottom-0 right-0 w-3 h-3 ${c.user.isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white dark:border-dark-200 rounded-full"></span>
+                    <img src="${getAvatar(c.user)}" class="w-12 h-12 rounded-full object-cover">
+                    ${c.user.isOnline ? '<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-dark-200 rounded-full"></span>' : ''}
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="font-semibold text-gray-800 dark:text-white text-sm">${c.user.name}</p>
-                    <p class="text-xs text-gray-500 truncate">${c.lastMessage?.text || 'Kezdj el beszélgetni'}</p>
+                    <p class="${nameClass} text-sm">${c.user.name}</p>
+                    <p class="text-xs ${msgClass} truncate flex items-center">
+                        ${lastMsgText}
+                    </p>
                 </div>
-                ${c.unread > 0 ? `<span class="bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">${c.unread}</span>` : ''}
+                
+                <!-- Messengeren kék pötty van olvasatlan üzenetnél -->
+                ${c.unread > 0 ? `<div class="w-3 h-3 bg-blue-600 rounded-full flex-shrink-0"></div>` : ''}
             </div>
-        `).join('');
+        `}).join('');
     } catch (e) {}
 }
 
@@ -5117,6 +5176,83 @@ async function handleCommunitySearch(query) {
 // Cache frissítése ha új csoport jön létre
 function refreshCommunityCache() {
     allCommunitiesCache = [];
+}
+    // ============ ÚJ FACEBOOK FUNKCIÓK ============
+
+// Emoji választó beüzemelése
+function setupEmojiPicker(triggerId, inputId) {
+    const trigger = document.getElementById(triggerId);
+    const input = document.getElementById(inputId);
+    if (!trigger || !input || trigger.dataset.emojiInitialized) return;
+
+    const picker = new EmojiButton({
+        position: 'top-start',
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+        autoHide: false,
+        zIndex: 1000
+    });
+
+    picker.on('emoji', selection => {
+        input.value += selection.emoji;
+        input.focus();
+        // Jelzünk a socketnek, hogy gépelünk
+        if(typeof handleMessengerTyping === 'function') handleMessengerTyping();
+        if(typeof handleChatTyping === 'function') handleChatTyping(triggerId.split('-')[2] || '');
+    });
+
+    trigger.addEventListener('click', () => picker.togglePicker(trigger));
+    trigger.dataset.emojiInitialized = "true";
+}
+
+// Kép küldése chatben
+async function sendChatImage(targetId, isGroup = false) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    
+    input.onchange = async () => {
+        if (input.files && input.files[0]) {
+            // Itt használjuk a meglévő toast függvényedet
+            if(typeof toast === 'function') toast('Kép küldése...', 'info');
+            
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                const base64 = evt.target.result;
+                try {
+                    // Feltételezzük, hogy van már uploadImage függvényed a kódban
+                    const imageUrl = await uploadImage(base64);
+                    const msgText = `[IMAGE]${imageUrl}`;
+                    
+                    if (isGroup) {
+                        await api(`/groups/${targetId}/messages`, {
+                            method: 'POST',
+                            body: JSON.stringify({ text: msgText })
+                        });
+                    } else {
+                        await api('/messages', {
+                            method: 'POST',
+                            body: JSON.stringify({ to: targetId, text: msgText })
+                        });
+                    }
+                } catch (e) { console.error(e); }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+    input.click();
+}
+
+// Üzenet formázása (Kép megjelenítés)
+function formatChatMessage(text) {
+    if (!text) return '';
+    if (text.startsWith('[IMAGE]')) {
+        const url = text.replace('[IMAGE]', '');
+        // Ha van openImageModal függvényed, azt hívja meg
+        return `<img src="${url}" class="chat-image" onclick="if(typeof openImageModal==='function')openImageModal('${url}')">`;
+    }
+    // Linkek felismerése
+    let f = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-blue-500 hover:underline">$1</a>');
+    return f.replace(/\n/g, '<br>');
 }
 </script>
 
