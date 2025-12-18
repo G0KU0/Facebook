@@ -2867,6 +2867,28 @@ function handleChatTyping(userId) {
     }, 1000);
 }
 
+// Kép küldése chatben
+async function sendChatImage(userId, input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                toast('Kép küldése...', 'info');
+                const imageUrl = await uploadImage(e.target.result);
+                
+                await api('/messages', {
+                    method: 'POST',
+                    body: JSON.stringify({ to: userId, text: '', image: imageUrl })
+                });
+                input.value = '';
+            } catch (err) {
+                toast('Hiba a kép küldésekor!', 'error');
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
 async function sendChatMessage(userId) {
     const input = document.getElementById(`chat-input-${userId}`);
     const text = input.value.trim();
