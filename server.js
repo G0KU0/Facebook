@@ -104,7 +104,8 @@ const postSchema = new mongoose.Schema({
 const messageSchema = new mongoose.Schema({
     from: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     to: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    text: { type: String, required: true },
+    text: { type: String, default: '' },
+    image: { type: String, default: '' },
     read: { type: Boolean, default: false },
     expiresAt: { type: Date, default: () => new Date(Date.now() + 48 * 60 * 60 * 1000), index: { expires: 0 } }
 }, { timestamps: true });
