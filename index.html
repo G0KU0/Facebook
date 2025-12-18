@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SocialBook</title>
-    <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js"></script>
+    <!-- Picmo Emoji Picker (Stabil verzió) -->
+    <script src="https://unpkg.com/picmo@latest/dist/umd/picmo.js"></script>
+    <script src="https://unpkg.com/@picmo/popup-picker@latest/dist/umd/picmo-popup.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -5184,28 +5186,51 @@ function refreshCommunityCache() {
     // ============ ÚJ FACEBOOK FUNKCIÓK ============
 
 // Emoji választó beüzemelése
+// Emoji választó beüzemelése (Picmo verzió - Hibajavított)
 function setupEmojiPicker(triggerId, inputId) {
     const trigger = document.getElementById(triggerId);
     const input = document.getElementById(inputId);
+    
+    // Ellenőrzés: ha nincs trigger, input, vagy már inicializáltuk
     if (!trigger || !input || trigger.dataset.emojiInitialized) return;
 
-    const picker = new EmojiButton({
-        position: 'top-start',
-        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
-        autoHide: false,
-        zIndex: 1000
-    });
+    try {
+        // Picmo Popup létrehozása
+        const picker = picmoPopup.createPopup({
+            triggerElement: trigger,
+            referenceElement: trigger,
+            position: 'auto',
+            theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+            showPreview: false 
+        });
 
-    picker.on('emoji', selection => {
-        input.value += selection.emoji;
-        input.focus();
-        // Jelzünk a socketnek, hogy gépelünk
-        if(typeof handleMessengerTyping === 'function') handleMessengerTyping();
-        if(typeof handleChatTyping === 'function') handleChatTyping(triggerId.split('-')[2] || '');
-    });
+        // Emoji kiválasztás esemény
+        picker.addEventListener('emoji:select', selection => {
+            input.value += selection.emoji;
+            input.focus();
+            
+            // Jelzünk a socketnek, hogy gépelünk (ha léteznek ezek a függvények)
+            if(typeof handleMessengerTyping === 'function') handleMessengerTyping();
+            
+            // Lebegő ablak esetén (a trigger ID-ból kinyerjük az UserID-t)
+            // A trigger ID pl: "emoji-btn-12345", a split után a tömb 2. eleme (index 1) az ID
+            const parts = triggerId.split('emoji-btn-');
+            if(parts.length > 1 && typeof handleChatTyping === 'function') {
+                handleChatTyping(parts[1]);
+            }
+        });
 
-    trigger.addEventListener('click', () => picker.togglePicker(trigger));
-    trigger.dataset.emojiInitialized = "true";
+        // Gombnyomásra megnyitás/bezárás
+        trigger.addEventListener('click', () => {
+            picker.toggle();
+        });
+
+        // Megjelöljük, hogy kész
+        trigger.dataset.emojiInitialized = "true";
+        
+    } catch (err) {
+        console.error("Emoji hiba:", err);
+    }
 }
 
 // Kép küldése chatben
