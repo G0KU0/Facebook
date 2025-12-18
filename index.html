@@ -2789,9 +2789,10 @@ async function openChatWindow(userId) {
             </div>
         </div>
         <div class="chat-footer p-2 border-t border-gray-200 dark:border-dark-300 bg-white dark:bg-dark-200 flex items-center gap-1">
-            <button class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500">
-                <i class="fas fa-plus-circle"></i>
-            </button>
+    <label class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500 cursor-pointer">
+        <i class="fas fa-image"></i>
+        <input type="file" accept="image/*" class="hidden" onchange="sendChatImage('${userId}', this)">
+       </label>
             <div class="flex-1">
                 <input type="text" id="chat-input-${userId}" placeholder="Aa" 
                     class="w-full bg-gray-100 dark:bg-dark-300 rounded-full px-3 py-1.5 text-sm outline-none text-gray-800 dark:text-white"
