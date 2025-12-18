@@ -2689,10 +2689,11 @@ async function loadMessengerMessages(userId) {
                     <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
                         ${!isMe ? `<img src="${getAvatar(user)}" class="w-7 h-7 rounded-full mb-1">` : ''}
                         <div class="${isMe 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-4 py-2 max-w-xs lg:max-w-md">
-                            ${m.text}
-                        </div>
+    ? 'bg-blue-500 text-white' 
+    : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-4 py-2 max-w-xs lg:max-w-md">
+    ${m.image ? `<img src="${m.image}" class="rounded-lg max-w-full mb-1 cursor-pointer" onclick="openImageModal('${m.image}')">` : ''}
+    ${m.text ? m.text : ''}
+</div>
                         ${showReadReceipt ? `
                             <div class="text-xs mt-1 ${m.read ? 'text-blue-500' : 'text-gray-400'}">
                                 ${m.read 
