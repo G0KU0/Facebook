@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SocialBook</title>
-    <!-- Picmo Emoji Picker (Stabil verzió) -->
-    <script src="https://unpkg.com/picmo@latest/dist/umd/picmo.js"></script>
-    <script src="https://unpkg.com/@picmo/popup-picker@latest/dist/umd/picmo-popup.js"></script>
+    <!-- Picmo Emoji Picker (Stabil verzió - JAVÍTVA) -->
+    <script src="https://unpkg.com/picmo@5.7.6/dist/umd/picmo.js"></script>
+    <script src="https://unpkg.com/@picmo/popup-picker@5.7.6/dist/umd/picmo-popup.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -5187,15 +5187,22 @@ function refreshCommunityCache() {
 
 // Emoji választó beüzemelése
 // Emoji választó beüzemelése (Picmo verzió - Hibajavított)
+// Emoji választó beüzemelése (Picmo verzió - Hibatűrő)
 function setupEmojiPicker(triggerId, inputId) {
     const trigger = document.getElementById(triggerId);
     const input = document.getElementById(inputId);
     
-    // Ellenőrzés: ha nincs trigger, input, vagy már inicializáltuk
     if (!trigger || !input || trigger.dataset.emojiInitialized) return;
 
+    // Ellenőrizzük, hogy a könyvtár betöltődött-e
+    if (typeof picmoPopup === 'undefined') {
+        console.warn('Az emoji könyvtár még nem töltődött be teljesen.');
+        // Megpróbáljuk később újra (200ms múlva)
+        setTimeout(() => setupEmojiPicker(triggerId, inputId), 200);
+        return;
+    }
+
     try {
-        // Picmo Popup létrehozása
         const picker = picmoPopup.createPopup({
             triggerElement: trigger,
             referenceElement: trigger,
@@ -5204,28 +5211,22 @@ function setupEmojiPicker(triggerId, inputId) {
             showPreview: false 
         });
 
-        // Emoji kiválasztás esemény
         picker.addEventListener('emoji:select', selection => {
             input.value += selection.emoji;
             input.focus();
             
-            // Jelzünk a socketnek, hogy gépelünk (ha léteznek ezek a függvények)
             if(typeof handleMessengerTyping === 'function') handleMessengerTyping();
             
-            // Lebegő ablak esetén (a trigger ID-ból kinyerjük az UserID-t)
-            // A trigger ID pl: "emoji-btn-12345", a split után a tömb 2. eleme (index 1) az ID
             const parts = triggerId.split('emoji-btn-');
             if(parts.length > 1 && typeof handleChatTyping === 'function') {
                 handleChatTyping(parts[1]);
             }
         });
 
-        // Gombnyomásra megnyitás/bezárás
         trigger.addEventListener('click', () => {
             picker.toggle();
         });
 
-        // Megjelöljük, hogy kész
         trigger.dataset.emojiInitialized = "true";
         
     } catch (err) {
