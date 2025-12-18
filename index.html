@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SocialBook</title>
+    <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -137,6 +138,47 @@
                 right: 1rem !important;
             }
         }
+        /* === ÚJ CHAT STÍLUS (Facebook Messenger) === */
+.msg-bubble-content {
+    max-width: fit-content;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+    position: relative;
+    word-wrap: break-word;
+}
+/* Saját üzenet (Jobb oldalt, Kék) */
+.msg-me .msg-bubble-content {
+    background-color: #0084ff;
+    color: white;
+    border-radius: 18px 18px 4px 18px;
+}
+/* Partner üzenete (Bal oldalt, Szürke) */
+.msg-them .msg-bubble-content {
+    background-color: #e4e6eb;
+    color: black;
+    border-radius: 18px 18px 18px 4px;
+}
+/* Sötét mód */
+.dark .msg-them .msg-bubble-content {
+    background-color: #3e4042;
+    color: white;
+}
+/* Képek a chatben */
+.chat-image {
+    border-radius: 12px;
+    max-width: 200px;
+    cursor: pointer;
+    margin-top: 5px;
+    transition: transform 0.2s;
+}
+.chat-image:hover { transform: scale(1.02); }
+/* Emoji gomb */
+.emoji-trigger {
+    cursor: pointer;
+    color: #0084ff;
+    font-size: 1.2rem;
+    padding: 5px;
+}
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-dark-100 transition-colors duration-200">
@@ -2612,19 +2654,36 @@ async function loadMessengerChatList() {
             ...odorUsers.map(u => ({ user: u, lastMessage: null, unread: 0 }))
         ];
         
-        container.innerHTML = allChats.map(c => `
-            <div onclick="openMessengerChat('${c.user._id}')" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition ${currentMessengerChat === c.user._id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}">
+container.innerHTML = allChats.map(c => {
+            // Ellenőrizzük, hogy az utolsó üzenet kép-e
+            let lastMsgText = c.lastMessage?.text || 'Kezdj el beszélgetni';
+            
+            if (lastMsgText.startsWith('[IMAGE]')) {
+                // Ha kép, akkor ikonnal és szöveggel helyettesítjük a linket
+                lastMsgText = '<i class="fas fa-camera mr-1"></i> Fénykép';
+            }
+
+            // Stílusok: Ha olvasatlan, akkor vastagabb a betű (Messenger stílus)
+            const nameClass = c.unread > 0 ? 'font-bold text-black dark:text-white' : 'font-semibold text-gray-700 dark:text-gray-300';
+            const msgClass = c.unread > 0 ? 'font-bold text-gray-900 dark:text-gray-100' : 'text-gray-500';
+            
+            return `
+            <div onclick="openMessengerChat('${c.user._id}')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 cursor-pointer transition ${currentMessengerChat === c.user._id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}">
                 <div class="relative">
-                    <img src="${getAvatar(c.user)}" class="w-12 h-12 rounded-full">
-                    <span class="absolute bottom-0 right-0 w-3 h-3 ${c.user.isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white dark:border-dark-200 rounded-full"></span>
+                    <img src="${getAvatar(c.user)}" class="w-12 h-12 rounded-full object-cover">
+                    ${c.user.isOnline ? '<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-dark-200 rounded-full"></span>' : ''}
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="font-semibold text-gray-800 dark:text-white text-sm">${c.user.name}</p>
-                    <p class="text-xs text-gray-500 truncate">${c.lastMessage?.text || 'Kezdj el beszélgetni'}</p>
+                    <p class="${nameClass} text-sm">${c.user.name}</p>
+                    <p class="text-xs ${msgClass} truncate flex items-center">
+                        ${lastMsgText}
+                    </p>
                 </div>
-                ${c.unread > 0 ? `<span class="bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">${c.unread}</span>` : ''}
+                
+                <!-- Messengeren kék pötty van olvasatlan üzenetnél -->
+                ${c.unread > 0 ? `<div class="w-3 h-3 bg-blue-600 rounded-full flex-shrink-0"></div>` : ''}
             </div>
-        `).join('');
+        `}).join('');
     } catch (e) {}
 }
 
@@ -2669,6 +2728,32 @@ async function openMessengerChat(userId) {
         </div>
     `;
     
+    // Input rész (Kép és Emoji gombokkal) - EZ AZ ÚJ RÉSZ
+    const inputContainer = document.querySelector('#messengerActiveChat .p-4.border-t');
+    if(inputContainer) {
+        inputContainer.innerHTML = `
+            <div class="flex items-end gap-2">
+                <button onclick="sendChatImage('${user._id}')" class="w-9 h-9 mb-1 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500 transition">
+                    <i class="fas fa-image text-xl"></i>
+                </button>
+                <div class="flex-1 bg-gray-100 dark:bg-dark-300 rounded-3xl flex items-center px-4 py-2">
+                    <input type="text" id="messengerInput" placeholder="Aa" 
+                        class="w-full bg-transparent border-none outline-none text-gray-800 dark:text-white"
+                        oninput="handleMessengerTyping()"
+                        onkeypress="if(event.key==='Enter')sendMessengerMessage()">
+                    <button id="messengerEmojiBtn" class="emoji-trigger ml-2 text-xl text-blue-500">
+                        <i class="fas fa-smile"></i>
+                    </button>
+                </div>
+                <button onclick="sendMessengerMessage()" class="w-9 h-9 mb-1 rounded-full hover:bg-blue-50 dark:hover:bg-dark-400 flex items-center justify-center text-blue-500 transition">
+                    <i class="fas fa-paper-plane text-xl"></i>
+                </button>
+            </div>
+        `;
+        // Emoji aktiválása
+        setTimeout(() => setupEmojiPicker('messengerEmojiBtn', 'messengerInput'), 100);
+    }
+    
     await loadMessengerMessages(userId);
     loadMessengerChatList();
 }
@@ -2683,23 +2768,22 @@ async function loadMessengerMessages(userId) {
             const isMe = m.from === currentUser._id;
             const isLast = idx === messages.length - 1;
             const showReadReceipt = isMe && isLast;
+            const content = formatChatMessage(m.text); // Kép/Link formázása
             
             return `
-                <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
-                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                        ${!isMe ? `<img src="${getAvatar(user)}" class="w-7 h-7 rounded-full mb-1">` : ''}
-                        <div class="${isMe 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-4 py-2 max-w-xs lg:max-w-md">
-                            ${m.text}
-                        </div>
-                        ${showReadReceipt ? `
-                            <div class="text-xs mt-1 ${m.read ? 'text-blue-500' : 'text-gray-400'}">
-                                ${m.read 
-                                    ? `<img src="${getAvatar(user)}" class="w-4 h-4 rounded-full inline"> Elolvasva` 
-                                    : '<i class="fas fa-check"></i> Elküldve'}
+                <div class="flex w-full mb-2 ${isMe ? 'justify-end msg-me' : 'justify-start msg-them'}">
+                    <div class="flex items-end max-w-[85%]">
+                        ${!isMe ? `<img src="${getAvatar(user)}" class="w-7 h-7 rounded-full mr-2 mb-4 shadow-sm">` : ''}
+                        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                            <div class="msg-bubble-content ${isMe ? 'bg-blue-600 text-white rounded-l-2xl rounded-tr-2xl rounded-br-sm' : 'bg-gray-200 dark:bg-dark-300 text-gray-900 dark:text-white rounded-r-2xl rounded-tl-2xl rounded-bl-sm'} shadow-sm">
+                                ${content}
                             </div>
-                        ` : ''}
+                            ${showReadReceipt ? `
+                                <div class="text-[10px] mt-1 mr-1 text-gray-400">
+                                    ${m.read ? 'Elolvasva' : 'Elküldve'}
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
                 </div>
             `;
@@ -2764,41 +2848,28 @@ async function openChatWindow(userId) {
                 <span class="font-semibold text-gray-800 dark:text-white text-sm">${user.name}</span>
             </div>
             <div class="flex items-center">
-                <button onclick="event.stopPropagation(); startCall('${userId}', 'audio')" class="w-7 h-7 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500" title="Hanghívás">
-                    <i class="fas fa-phone text-sm"></i>
-                </button>
-                <button onclick="event.stopPropagation(); startCall('${userId}', 'video')" class="w-7 h-7 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500" title="Videóhívás">
-                    <i class="fas fa-video text-sm"></i>
-                </button>
-                <button onclick="event.stopPropagation(); toggleChatWindow('${userId}')" class="w-7 h-7 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-gray-500">
-                    <i class="fas fa-minus text-sm"></i>
-                </button>
                 <button onclick="event.stopPropagation(); closeChatWindow('${userId}')" class="w-7 h-7 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-gray-500">
                     <i class="fas fa-times text-sm"></i>
                 </button>
             </div>
         </div>
         <div class="chat-body flex-1 overflow-y-auto p-3 space-y-2 bg-white dark:bg-dark-100" id="chat-messages-${userId}"></div>
-        <div id="chat-typing-${userId}" class="hidden px-3 py-1">
-            <div class="flex items-center gap-2 text-gray-500 text-xs">
-                <div class="flex gap-1">
-                    <span class="typing-dot"></span>
-                    <span class="typing-dot"></span>
-                    <span class="typing-dot"></span>
-                </div>
-            </div>
-        </div>
-        <div class="chat-footer p-2 border-t border-gray-200 dark:border-dark-300 bg-white dark:bg-dark-200 flex items-center gap-1">
-            <button class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500">
-                <i class="fas fa-plus-circle"></i>
+        
+        <!-- ÚJ FOOTER (Kép + Emoji) -->
+        <div class="chat-footer p-2 border-t border-gray-200 dark:border-dark-300 bg-white dark:bg-dark-200 flex items-end gap-1">
+            <button onclick="sendChatImage('${userId}')" class="w-8 h-8 mb-0.5 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500">
+                <i class="fas fa-image"></i>
             </button>
-            <div class="flex-1">
+            <div class="flex-1 bg-gray-100 dark:bg-dark-300 rounded-2xl flex items-center px-3 py-1.5">
                 <input type="text" id="chat-input-${userId}" placeholder="Aa" 
-                    class="w-full bg-gray-100 dark:bg-dark-300 rounded-full px-3 py-1.5 text-sm outline-none text-gray-800 dark:text-white"
+                    class="w-full bg-transparent outline-none text-sm text-gray-800 dark:text-white"
                     oninput="handleChatTyping('${userId}')"
                     onkeypress="if(event.key==='Enter')sendChatMessage('${userId}')">
+                <button id="emoji-btn-${userId}" class="emoji-trigger text-blue-500 ml-1">
+                    <i class="fas fa-smile"></i>
+                </button>
             </div>
-            <button onclick="sendChatMessage('${userId}')" class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500">
+            <button onclick="sendChatMessage('${userId}')" class="w-8 h-8 mb-0.5 rounded-full hover:bg-gray-100 dark:hover:bg-dark-300 flex items-center justify-center text-blue-500">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
@@ -2806,12 +2877,11 @@ async function openChatWindow(userId) {
     
     document.getElementById('chatWindowsContainer').appendChild(win);
     openChats.set(userId, win);
+    
+    // Emoji aktiválása
+    setTimeout(() => setupEmojiPicker(`emoji-btn-${userId}`, `chat-input-${userId}`), 100);
+    
     await loadChatMessages(userId);
-}
-
-function toggleChatWindow(userId) {
-    const win = openChats.get(userId);
-    if (win) win.classList.toggle('minimized');
 }
 
 function closeChatWindow(userId) {
@@ -2832,22 +2902,15 @@ async function loadChatMessages(userId) {
         
         container.innerHTML = messages.map((m, idx) => {
             const isMe = m.from === currentUser._id;
-            const isLast = idx === messages.length - 1;
-            const showReadReceipt = isMe && isLast;
+            const content = formatChatMessage(m.text);
             
             return `
-                <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
-                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                        <div class="${isMe 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-3 py-1.5 max-w-[200px] text-sm">
-                            ${m.text}
+                <div class="flex w-full mb-1 ${isMe ? 'justify-end msg-me' : 'justify-start msg-them'}">
+                    <div class="flex items-end max-w-[90%]">
+                        ${!isMe ? `<img src="${getAvatar(user)}" class="w-5 h-5 rounded-full mr-1 mb-2">` : ''}
+                        <div class="msg-bubble-content ${isMe ? 'bg-blue-600 text-white rounded-l-2xl rounded-tr-2xl rounded-br-sm' : 'bg-gray-200 dark:bg-dark-300 text-gray-900 dark:text-white rounded-r-2xl rounded-tl-2xl rounded-bl-sm'}">
+                            ${content}
                         </div>
-                        ${showReadReceipt ? `
-                            <div class="read-receipt mt-0.5 ${m.read ? 'seen' : ''}">
-                                ${m.read ? `<img src="${getAvatar(user)}" class="w-3 h-3 rounded-full inline">` : '<i class="fas fa-check"></i>'}
-                            </div>
-                        ` : ''}
                     </div>
                 </div>
             `;
@@ -5117,6 +5180,83 @@ async function handleCommunitySearch(query) {
 // Cache frissítése ha új csoport jön létre
 function refreshCommunityCache() {
     allCommunitiesCache = [];
+}
+    // ============ ÚJ FACEBOOK FUNKCIÓK ============
+
+// Emoji választó beüzemelése
+function setupEmojiPicker(triggerId, inputId) {
+    const trigger = document.getElementById(triggerId);
+    const input = document.getElementById(inputId);
+    if (!trigger || !input || trigger.dataset.emojiInitialized) return;
+
+    const picker = new EmojiButton({
+        position: 'top-start',
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+        autoHide: false,
+        zIndex: 1000
+    });
+
+    picker.on('emoji', selection => {
+        input.value += selection.emoji;
+        input.focus();
+        // Jelzünk a socketnek, hogy gépelünk
+        if(typeof handleMessengerTyping === 'function') handleMessengerTyping();
+        if(typeof handleChatTyping === 'function') handleChatTyping(triggerId.split('-')[2] || '');
+    });
+
+    trigger.addEventListener('click', () => picker.togglePicker(trigger));
+    trigger.dataset.emojiInitialized = "true";
+}
+
+// Kép küldése chatben
+async function sendChatImage(targetId, isGroup = false) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    
+    input.onchange = async () => {
+        if (input.files && input.files[0]) {
+            // Itt használjuk a meglévő toast függvényedet
+            if(typeof toast === 'function') toast('Kép küldése...', 'info');
+            
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                const base64 = evt.target.result;
+                try {
+                    // Feltételezzük, hogy van már uploadImage függvényed a kódban
+                    const imageUrl = await uploadImage(base64);
+                    const msgText = `[IMAGE]${imageUrl}`;
+                    
+                    if (isGroup) {
+                        await api(`/groups/${targetId}/messages`, {
+                            method: 'POST',
+                            body: JSON.stringify({ text: msgText })
+                        });
+                    } else {
+                        await api('/messages', {
+                            method: 'POST',
+                            body: JSON.stringify({ to: targetId, text: msgText })
+                        });
+                    }
+                } catch (e) { console.error(e); }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+    input.click();
+}
+
+// Üzenet formázása (Kép megjelenítés)
+function formatChatMessage(text) {
+    if (!text) return '';
+    if (text.startsWith('[IMAGE]')) {
+        const url = text.replace('[IMAGE]', '');
+        // Ha van openImageModal függvényed, azt hívja meg
+        return `<img src="${url}" class="chat-image" onclick="if(typeof openImageModal==='function')openImageModal('${url}')">`;
+    }
+    // Linkek felismerése
+    let f = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-blue-500 hover:underline">$1</a>');
+    return f.replace(/\n/g, '<br>');
 }
 </script>
 
