@@ -4162,13 +4162,12 @@ async function loadGroupMessages(groupId) {
                 <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
                     <div class="flex gap-2 max-w-md ${isMe ? 'flex-row-reverse' : ''}">
                         ${!isMe ? `<img src="${getAvatar(m.from)}" class="w-8 h-8 rounded-full flex-shrink-0">` : ''}
-                        <div>
-                            ${!isMe ? `<p class="text-xs text-gray-500 mb-1">${senderName}${badge}</p>` : ''}
-                            <div class="${isMe 
-                                ? 'bg-blue-500 text-white' 
-                                : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-4 py-2">
-                                ${m.text}
-                            </div>
+                        <div class="${isMe 
+    ? 'bg-blue-500 text-white' 
+    : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-4 py-2 max-w-xs lg:max-w-md">
+    ${m.image ? `<img src="${m.image}" class="rounded-lg max-w-full mb-1 cursor-pointer" onclick="openImageModal('${m.image}')">` : ''}
+    ${m.text ? m.text : ''}
+</div>
                             <p class="text-xs text-gray-400 mt-1 ${isMe ? 'text-right' : ''}">${timeAgo(m.createdAt)}</p>
                         </div>
                     </div>
