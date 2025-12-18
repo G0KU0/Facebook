@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SocialBook</title>
-    <!-- Picmo Emoji Picker (Stabil verzió - JAVÍTVA) -->
-    <script src="https://unpkg.com/picmo@5.7.6/dist/umd/picmo.js"></script>
-    <script src="https://unpkg.com/@picmo/popup-picker@5.7.6/dist/umd/picmo-popup.js"></script>
+    <!-- Emoji Button Könyvtár (Ez a legstabilabb verzió) -->
+    <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -5183,50 +5182,54 @@ async function handleCommunitySearch(query) {
 function refreshCommunityCache() {
     allCommunitiesCache = [];
 }
-    // ============ ÚJ FACEBOOK FUNKCIÓK ============
+// ============ ÚJ FACEBOOK FUNKCIÓK (JAVÍTOTT) ============
 
-// Emoji választó beüzemelése
-// Emoji választó beüzemelése (Picmo verzió - Hibajavított)
-// Emoji választó beüzemelése (Picmo verzió - Hibatűrő)
+// Emoji választó beüzemelése (EmojiButton verzió)
 function setupEmojiPicker(triggerId, inputId) {
     const trigger = document.getElementById(triggerId);
     const input = document.getElementById(inputId);
     
+    // Ha nincs gomb vagy input, vagy már kész, kilépünk
     if (!trigger || !input || trigger.dataset.emojiInitialized) return;
 
-    // Ellenőrizzük, hogy a könyvtár betöltődött-e
-    if (typeof picmoPopup === 'undefined') {
-        console.warn('Az emoji könyvtár még nem töltődött be teljesen.');
-        // Megpróbáljuk később újra (200ms múlva)
-        setTimeout(() => setupEmojiPicker(triggerId, inputId), 200);
+    // BIZTONSÁGI ELLENŐRZÉS: Várjuk meg, amíg a könyvtár betöltődik
+    if (typeof EmojiButton === 'undefined') {
+        console.log('Emoji könyvtár betöltése folyamatban...');
+        // Ha még nincs kész, próbáljuk újra 500ms múlva
+        setTimeout(() => setupEmojiPicker(triggerId, inputId), 500);
         return;
     }
 
     try {
-        const picker = picmoPopup.createPopup({
-            triggerElement: trigger,
-            referenceElement: trigger,
-            position: 'auto',
+        // Emoji Picker létrehozása
+        const picker = new EmojiButton({
+            position: 'top-start',
             theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
-            showPreview: false 
+            autoHide: false,
+            style: 'twemoji' // Szebb emoji stílus
         });
 
-        picker.addEventListener('emoji:select', selection => {
+        // Amikor kiválasztasz egy emojit
+        picker.on('emoji', selection => {
             input.value += selection.emoji;
             input.focus();
             
+            // Jelzünk a rendszernek, hogy írtunk valamit (gépelés jelző)
+            input.dispatchEvent(new Event('input'));
+            
             if(typeof handleMessengerTyping === 'function') handleMessengerTyping();
             
+            // Csoportos/Lebegő ablak kezelése
             const parts = triggerId.split('emoji-btn-');
             if(parts.length > 1 && typeof handleChatTyping === 'function') {
                 handleChatTyping(parts[1]);
             }
         });
 
-        trigger.addEventListener('click', () => {
-            picker.toggle();
-        });
-
+        // Gombnyomásra megnyitás
+        trigger.addEventListener('click', () => picker.togglePicker(trigger));
+        
+        // Megjelöljük, hogy ez a gomb már kész van
         trigger.dataset.emojiInitialized = "true";
         
     } catch (err) {
