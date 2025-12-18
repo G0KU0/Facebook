@@ -1082,6 +1082,28 @@
             <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
                 <i class="fas fa-image text-green-500"></i> Profilképek
             </h4>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Profilkép</label>
+                <div class="flex items-center gap-4">
+                    <img id="settingsAvatarPreview" src="" class="w-16 h-16 rounded-full object-cover border-2 border-gray-200 dark:border-dark-300">
+                    <label class="cursor-pointer bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-200 transition">
+                        <i class="fas fa-upload mr-2"></i>Kép cseréje
+                        <input type="file" id="settingsAvatarInput" accept="image/*" class="hidden" onchange="previewSettingsImage(this, 'settingsAvatarPreview')">
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Borítókép</label>
+                <div class="space-y-2">
+                    <img id="settingsCoverPreview" src="" class="w-full h-32 object-cover rounded-lg border-2 border-gray-200 dark:border-dark-300">
+                    <label class="cursor-pointer inline-block bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-dark-400 transition">
+                        <i class="fas fa-upload mr-2"></i>Borítókép cseréje
+                        <input type="file" id="settingsCoverInput" accept="image/*" class="hidden" onchange="previewSettingsImage(this, 'settingsCoverPreview')">
+                    </label>
+                </div>
+            </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profilkép URL</label>
                 <input type="text" id="settingsAvatar" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://example.com/kep.jpg">
