@@ -1079,17 +1079,39 @@
             </div>
             
             <!-- Profilképek -->
-            <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
-                <i class="fas fa-image text-green-500"></i> Profilképek
-            </h4>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profilkép URL</label>
-                <input type="text" id="settingsAvatar" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://example.com/kep.jpg">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Borítókép URL</label>
-                <input type="text" id="settingsCover" class="w-full px-4 py-2.5 bg-gray-100 dark:bg-dark-300 rounded-lg text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://example.com/borito.jpg">
-            </div>
+<h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
+    <i class="fas fa-image text-green-500"></i> Profilképek
+</h4>
+<div>
+    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profilkép</label>
+    <div class="flex gap-2 items-center">
+        <div id="avatarPreviewContainer" class="w-16 h-16 rounded-full bg-gray-200 dark:bg-dark-400 overflow-hidden flex-shrink-0">
+            <img id="avatarPreview" src="" class="w-full h-full object-cover hidden">
+        </div>
+        <div class="flex-1">
+            <label class="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer transition">
+                <i class="fas fa-upload"></i>
+                <span>Kép feltöltése</span>
+                <input type="file" id="settingsAvatarFile" accept="image/*" class="hidden" onchange="previewSettingsImage(this, 'avatar')">
+            </label>
+            <input type="hidden" id="settingsAvatar">
+        </div>
+    </div>
+</div>
+<div>
+    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Borítókép</label>
+    <div class="flex flex-col gap-2">
+        <div id="coverPreviewContainer" class="w-full h-24 rounded-lg bg-gray-200 dark:bg-dark-400 overflow-hidden">
+            <img id="coverPreview" src="" class="w-full h-full object-cover hidden">
+        </div>
+        <label class="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer transition">
+            <i class="fas fa-upload"></i>
+            <span>Borítókép feltöltése</span>
+            <input type="file" id="settingsCoverFile" accept="image/*" class="hidden" onchange="previewSettingsImage(this, 'cover')">
+        </label>
+        <input type="hidden" id="settingsCover">
+    </div>
+</div>
             
             <!-- Bemutatkozás -->
             <h4 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2 pt-2">
