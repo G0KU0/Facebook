@@ -869,8 +869,8 @@ app.get('/api/messages/:userId', auth, async (req, res) => {
 
 // Üzenet küldése
 app.post('/api/messages', auth, async (req, res) => {
-    const { to, text } = req.body;
-    const message = await Message.create({ from: req.user._id, to, text });
+    const { to, text, image } = req.body;
+    const message = await Message.create({ from: req.user._id, to, text: text || '', image: image || '' });
     await message.populate('from to', 'name avatar');
     
     io.to(to).emit('newMessage', message);
