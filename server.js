@@ -392,6 +392,16 @@ app.post('/api/auth/register', async (req, res) => {
         const clientIP = getClientIP(req);
         const deviceInfo = req.headers['user-agent'] || 'Ismeretlen eszköz';
 
+        // === ÚJ KÓD KEZDETE: IP ELLENŐRZÉS ===
+        // Megnézzük, van-e már felhasználó ezzel a regisztrációs IP-vel
+        const ipExists = await User.findOne({ registrationIP: clientIP });
+        
+        if (ipExists) {
+        // Ha tesztelni akarod magadnak, ezt a részt kommenteld ki ideiglenesen
+            return res.status(403).json({ error: 'Erről az IP címről már regisztráltak fiókot! (Limit: 1 fiók/IP)' });
+        }
+        // === ÚJ KÓD VÉGE ===
+
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.create({
             firstName: firstName.trim(),
