@@ -2840,9 +2840,10 @@ async function loadChatMessages(userId) {
                 <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
                     <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
                         <div class="${isMe 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-3 py-1.5 max-w-[200px] text-sm">
-                            ${m.text}
+                        ? 'bg-blue-500 text-white' 
+                        : 'bg-gray-200 dark:bg-dark-300 text-gray-800 dark:text-white'} rounded-2xl px-3 py-1.5 max-w-[200px] text-sm">
+                          ${m.image ? `<img src="${m.image}" class="rounded-lg max-w-full mb-1 cursor-pointer" onclick="openImageModal('${m.image}')">` : ''}
+                          ${m.text ? m.text : ''}
                         </div>
                         ${showReadReceipt ? `
                             <div class="read-receipt mt-0.5 ${m.read ? 'seen' : ''}">
